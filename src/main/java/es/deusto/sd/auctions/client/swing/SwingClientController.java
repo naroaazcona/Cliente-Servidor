@@ -50,6 +50,7 @@ public class SwingClientController {
     public void logout() {
         serviceProxy.logout(token);
     }
+    
 
    public List<Reto> getTodosRetos(){
 	   return serviceProxy.getTodosRetos();
