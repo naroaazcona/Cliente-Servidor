@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import es.deusto.sd.auctions.client.data.Credendiales;
 import es.deusto.sd.auctions.client.data.Reto;
+import es.deusto.sd.auctions.client.data.Sesion;
 
 
 
@@ -173,6 +174,49 @@ public class HttpServiceProxy implements IAuctionsServiceProxy {
         }
     }
 
+	@Override
+	public List<Sesion> getTodasSesiones() {
+		try {
+            HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(BASE_URL + "/auctions/sesiones"))
+                .header("Content-Type", "application/json")
+                .GET()
+                .build();
+            HttpResponse<String> response = httpCliente.send(request, HttpResponse.BodyHandlers.ofString());
+            
+            return switch (response.statusCode()) {
+            case 200 -> objectMapper.readValue(response.body(), objectMapper.getTypeFactory().constructCollectionType(List.class, Sesion.class));
+            case 204 -> throw new RuntimeException("Contenido no encontrado: No se han encontrado sesiones");
+            case 500 -> throw new RuntimeException("Error interno del servidor al buscar sesiones");
+            default -> throw new RuntimeException("No se pudieron recuperar sesiones con código de estado: " + response.statusCode());
+            };
+			}catch (IOException | InterruptedException e) {
+	            throw new RuntimeException("Error al obtener las sesiones", e);
+	        }		
+	}
+
+	@Override
+	public Sesion getDetalleSesion(Long idSesion) {
+		try {
+			   HttpRequest request = HttpRequest.newBuilder()
+		                .uri(URI.create(BASE_URL + "/auctions/retos/" + idSesion))
+		                .header("Content-Type", "application/json")
+		                .GET()
+		                .build();
+
+		            HttpResponse<String> response = httpCliente.send(request, HttpResponse.BodyHandlers.ofString());
+
+		            return switch (response.statusCode()) {
+		                case 200 -> objectMapper.readValue(response.body(), Sesion.class);
+		                case 404 -> throw new RuntimeException("Not Found: Sesion no encontrada");
+		                case 500 -> throw new RuntimeException("Error interno del servidor al buscar la sesion");
+		                default -> throw new RuntimeException("No se pudieron recuperar los detalles del reto con código de estado: " + response.statusCode());
+		            };
+		        } catch (IOException | InterruptedException e) {
+		            throw new RuntimeException("\n" + "Error al obtener los detalles del reto", e);
+		        }
+			
+		}
 	
 
 	
