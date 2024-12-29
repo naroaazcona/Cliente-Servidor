@@ -43,7 +43,7 @@ public class SwingClientController {
             
             return true;
         } catch (RuntimeException e) {
-            throw new RuntimeException("Login failed: " + e.getMessage());
+            throw new RuntimeException("Error al hacer Login: " + e.getMessage());
         }
     }
 
@@ -51,8 +51,14 @@ public class SwingClientController {
         serviceProxy.logout(token);
     }
 
-    public List<Reto> getCategories() {
-        return serviceProxy.getTodosRetos();
-    }
-
+   public List<Reto> getTodosRetos(){
+	   return serviceProxy.getTodosRetos();
+   }
+   public List<Reto> getRetosXDeporte(String Deporte){
+	   return serviceProxy.getRetosXDeporte(Deporte);
+   }
+   
+   public Reto getDetallesDeReto(Long IdReto) {
+	   return serviceProxy.getDetallesDeReto(IdReto);
+   }
 }
