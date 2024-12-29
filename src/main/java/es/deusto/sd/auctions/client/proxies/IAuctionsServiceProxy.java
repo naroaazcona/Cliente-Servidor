@@ -11,6 +11,7 @@ import java.util.List;
 
 import es.deusto.sd.auctions.client.data.Credendiales;
 import es.deusto.sd.auctions.client.data.Reto;
+import es.deusto.sd.auctions.client.data.Sesion;
 
 /**
  * IAuctionsServiceProxy interface defines a contract for communication 
@@ -52,5 +53,7 @@ public interface IAuctionsServiceProxy {
 
   	Reto getDetallesDeReto(Long IdReto);
 
+  	List<Sesion> getTodasSesiones();
+  	Sesion getDetalleSesion(Long idSesion);
   	
 }
