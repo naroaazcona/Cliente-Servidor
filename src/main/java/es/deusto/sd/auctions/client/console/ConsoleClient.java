@@ -32,6 +32,7 @@ public class ConsoleClient {
 	private String defaultPassword = "1";
 	
 
+	//Prueba
 	public boolean login() {
 		try {
 			Credendiales credenciales = new Credendiales(defaultEmail, defaultPassword);
