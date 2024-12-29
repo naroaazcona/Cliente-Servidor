@@ -7,6 +7,8 @@ package es.deusto.sd.auctions.client.web;
 
 import java.util.List;
 
+import org.springframework.stereotype.Controller;
+
 import es.deusto.sd.auctions.client.proxies.IAuctionsServiceProxy;
 
 
