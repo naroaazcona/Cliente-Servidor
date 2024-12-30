@@ -92,9 +92,9 @@ public class WebClientController {
 
 		try {
 			retos = auctionServiceProxy.getTodosRetos();
-			model.addAttribute("categories", retos);
+			model.addAttribute("reto", retos);
 		} catch (RuntimeException e) {
-			model.addAttribute("errorMessage", "Failed to load categories: " + e.getMessage());
+			model.addAttribute("errorMessage", "Error al cargar Retos: " + e.getMessage());
 		}
 
 		return "index";
@@ -158,7 +158,7 @@ public class WebClientController {
 		return "Retos";
 	}
 	
-	@GetMapping("/article/{id}")
+	@GetMapping("/Reto/{id}")
 	public String getArticleDetails(@PathVariable("id") Long id, Model model) {
 		Reto reto;
 
