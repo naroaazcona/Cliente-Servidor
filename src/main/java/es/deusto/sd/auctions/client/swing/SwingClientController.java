@@ -11,6 +11,7 @@ import java.util.List;
 
 import es.deusto.sd.auctions.client.data.Credendiales;
 import es.deusto.sd.auctions.client.data.Reto;
+import es.deusto.sd.auctions.client.data.Sesion;
 import es.deusto.sd.auctions.client.proxies.HttpServiceProxy;
 import es.deusto.sd.auctions.client.proxies.IAuctionsServiceProxy;
 
@@ -61,5 +62,13 @@ public class SwingClientController {
    
    public Reto getDetallesDeReto(Long IdReto) {
 	   return serviceProxy.getDetallesDeReto(IdReto);
+   }
+   
+   public List<Sesion> getTodasSesiones(){
+	   return serviceProxy.getTodasSesiones();
+   }
+   
+   public Sesion getDetalleDeSesion(Long IdSesion){
+	   return serviceProxy.getDetalleSesion(IdSesion);
    }
 }
