@@ -7,9 +7,20 @@ package es.deusto.sd.auctions.client.web;
 
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import es.deusto.sd.auctions.client.data.Credendiales;
+import es.deusto.sd.auctions.client.data.Reto;
 import es.deusto.sd.auctions.client.proxies.IAuctionsServiceProxy;
+import jakarta.servlet.http.HttpServletRequest;
 
 
 /**
@@ -62,6 +73,106 @@ import es.deusto.sd.auctions.client.proxies.IAuctionsServiceProxy;
  */
 @Controller
 public class WebClientController {
+	
+	@Autowired
+	private IAuctionsServiceProxy auctionServiceProxy;
+	
+	private String token;
+	
+	@ModelAttribute
+	public void añadirAtributos(Model model, HttpServletRequest request) {
+		String currentUrl = ServletUriComponentsBuilder.fromRequestUri(request).toUriString();
+		model.addAttribute("currentUrl", currentUrl); 
+		model.addAttribute("token", token); 
+	}
+	@GetMapping("/")
+	
+	public String home(Model model) {
+		List<Reto> retos;
 
+		try {
+			retos = auctionServiceProxy.getTodosRetos();
+			model.addAttribute("categories", retos);
+		} catch (RuntimeException e) {
+			model.addAttribute("errorMessage", "Failed to load categories: " + e.getMessage());
+		}
+
+		return "index";
+	}
+	
+	@GetMapping("/login")
+	public String showLoginPage(@RequestParam(value = "redirectUrl", required = false) String redirectUrl,
+			Model model) {
+		// Add redirectUrl to the model if needed
+		model.addAttribute("redirectUrl", redirectUrl);
+
+		return "login"; // Return your login template
+	}
+	
+	@PostMapping("/login")
+	public String performLogin(@RequestParam("email") String email, @RequestParam("password") String password,
+			@RequestParam(value = "redirectUrl", required = false) String redirectUrl, Model model) {
+		Credendiales credenciales = new Credendiales(email, password);
+
+		try {
+			token = auctionServiceProxy.login(credenciales);
+
+			// Redirect to the original page or root if redirectUrl is null
+			return "redirect:" + (redirectUrl != null && !redirectUrl.isEmpty() ? redirectUrl : "/");
+		} catch (RuntimeException e) {
+			model.addAttribute("errorMessage", "Error al hacer Login: " + e.getMessage());
+			return "login"; // Return to login page with error message
+		}
+	}
+	
+	@GetMapping("/logout")
+	public String performLogout(@RequestParam(value = "redirectUrl", defaultValue = "/") String redirectUrl,
+			Model model) {
+		try {
+			auctionServiceProxy.logout(token);
+			token = null; // Clear the token after logout
+			model.addAttribute("successMessage", "Logout correcto.");
+		} catch (RuntimeException e) {
+			model.addAttribute("errorMessage", "Error de logout: " + e.getMessage());
+		}
+
+		// Redirect to the specified URL after logout
+		return "redirect:" + redirectUrl;
+	}
+	
+	@GetMapping("/Reto/{name}")
+	public String getRetosDeporte(@PathVariable("nombreDeporte") String nombreDeporte, Model model) {
+		List<Reto> retos;
+		
+		try {
+			retos = auctionServiceProxy.getRetosXDeporte(nombreDeporte);
+			model.addAttribute("Retos", retos);
+			model.addAttribute("Deporte", nombreDeporte);
+		} catch (RuntimeException e) {
+			model.addAttribute("errorMessage", "Error al cargar los Retos por cada Deporte: " + e.getMessage());
+			model.addAttribute("Reto", null);
+			model.addAttribute("Deporte", nombreDeporte);
+			
+		}
+		
+		return "Retos";
+	}
+	
+	@GetMapping("/article/{id}")
+	public String getArticleDetails(@PathVariable("id") Long id, Model model) {
+		Reto reto;
+
+		try {
+			reto = auctionServiceProxy.getDetallesDeReto(id);
+			model.addAttribute("Reto", reto);
+		} catch (RuntimeException e) {
+			model.addAttribute("errorMessage", "Error al cargar los detalles del Reto: " + e.getMessage());
+			model.addAttribute("Reto", null);
+		}
+
+		return "Reto";
+	}
+
+	
 	
 }
