@@ -16,6 +16,7 @@ import org.springframework.web.client.RestTemplate;
 
 import es.deusto.sd.auctions.client.data.Credendiales;
 import es.deusto.sd.auctions.client.data.Reto;
+import es.deusto.sd.auctions.client.data.Sesion;
 
 /**
  * RestTemplateServiceProxy class is an implementation of the Service Proxy design pattern.
@@ -101,7 +102,7 @@ public class RestTemplateServiceProxy implements IAuctionsServiceProxy{
 
 	@Override
 	public Reto getDetallesDeReto(Long IdReto) {
-		String url = apiBaseUrl + "/auctions/articles/" + IdReto;
+		String url = apiBaseUrl + "/auctions/retos/" + IdReto;
         
         try {
             return restTemplate.getForObject(url, Reto.class);
@@ -116,7 +117,7 @@ public class RestTemplateServiceProxy implements IAuctionsServiceProxy{
 	@SuppressWarnings("unchecked")
 	@Override
 	public List<Reto> getRetosXDeporte(String Deporte) {
-		  String url = apiBaseUrl + "/auctions/Deportes/" + Deporte;
+		  String url = apiBaseUrl + "/auctions/Retos/" + Deporte;
 		  try{
 	           return restTemplate.getForObject(url, List.class);
 	        } catch (HttpStatusCodeException e) {
@@ -126,6 +127,36 @@ public class RestTemplateServiceProxy implements IAuctionsServiceProxy{
 	            }
 	        }
 	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public List<Sesion> getTodasSesiones() {
+       String url = apiBaseUrl + "/auctions/Sesiones";
+        
+        try {
+            return restTemplate.getForObject(url, List.class);
+        } catch (HttpStatusCodeException e) {
+            switch (e.getStatusCode().value()) {
+                case 404 -> throw new RuntimeException("Sesiones no encontradas.");
+                default -> throw new RuntimeException("No se pudieron recuperar las Sesiones: " + e.getStatusText());
+            }
+        }
+    }
+	
+
+	@Override
+	public Sesion getDetalleSesion(Long IdSesion) {
+String url = apiBaseUrl + "/auctions/retos/" + IdSesion ;
+        
+        try {
+            return restTemplate.getForObject(url, Sesion.class);
+        } catch (HttpStatusCodeException e) {
+            switch (e.getStatusCode().value()) {
+                case 404 -> throw new RuntimeException("Sesion no encontrada: ID " + IdSesion);
+                default -> throw new RuntimeException("No se pudieron recuperar los detalles de la Sesion  " + e.getStatusText());
+            }
+        }
+    }
     
 
 }
