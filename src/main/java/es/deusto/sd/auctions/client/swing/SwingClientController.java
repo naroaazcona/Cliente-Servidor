@@ -5,6 +5,7 @@
  */
 package es.deusto.sd.auctions.client.swing;
 
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -67,7 +68,11 @@ public class SwingClientController {
    public List<Sesion> getTodasSesiones(){
 	   return serviceProxy.getTodasSesiones();
    }
-   
+   public List<Sesion> getSesionesXReto(String NombreReto){
+	   //hacer el metodo en el serviceProxy
+	   List<Sesion> prueba = new ArrayList<Sesion>();
+	   return prueba;
+   }
    public Sesion getDetalleDeSesion(Long IdSesion){
 	   return serviceProxy.getDetalleSesion(IdSesion);
    }
