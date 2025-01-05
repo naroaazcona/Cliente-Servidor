@@ -19,6 +19,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import es.deusto.sd.auctions.client.data.Credendiales;
 import es.deusto.sd.auctions.client.data.Reto;
+import es.deusto.sd.auctions.client.data.Sesion;
 import es.deusto.sd.auctions.client.proxies.IAuctionsServiceProxy;
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -173,7 +174,22 @@ public class WebClientController {
 		return "Reto";
 	}
 
-
-
+	@GetMapping("/Reto/{name}")
+	public String getSesionesReto(@PathVariable("nombreDeporte") String nombreReto, Model model) {
+		List<Sesion> sesiones;
+		
+		try {
+			sesiones = auctionServiceProxy.getSesionesPorReto(nombreReto);
+			model.addAttribute("Sesiones", sesiones);
+			model.addAttribute("Reto", nombreReto);
+		} catch (RuntimeException e) {
+			model.addAttribute("errorMessage", "Error al cargar las Sesiones por cada Reto: " + e.getMessage());
+			model.addAttribute("Sesion", null);
+			model.addAttribute("Reto", nombreReto);
+			
+		}
+		
+		return "Retos";
+	}
 	
 }

@@ -52,6 +52,8 @@ public interface IAuctionsServiceProxy {
 	List<Reto> getRetosXDeporte(String Deporte);
 
   	Reto getDetallesDeReto(Long IdReto);
+  	
+  	List<Sesion> getSesionesPorReto(String nombreReto);
 
   	List<Sesion> getTodasSesiones();
   	Sesion getDetalleSesion(Long idSesion);

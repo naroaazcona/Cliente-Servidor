@@ -146,7 +146,7 @@ public class RestTemplateServiceProxy implements IAuctionsServiceProxy{
 
 	@Override
 	public Sesion getDetalleSesion(Long IdSesion) {
-String url = apiBaseUrl + "/auctions/retos/" + IdSesion ;
+		String url = apiBaseUrl + "/auctions/Sesion/" + IdSesion ;
         
         try {
             return restTemplate.getForObject(url, Sesion.class);
@@ -157,6 +157,20 @@ String url = apiBaseUrl + "/auctions/retos/" + IdSesion ;
             }
         }
     }
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public List<Sesion> getSesionesPorReto(String nombreReto) {
+		 String url = apiBaseUrl + "/auctions/Retos/" + nombreReto;
+		  try{
+	           return restTemplate.getForObject(url, List.class);
+	        } catch (HttpStatusCodeException e) {
+	            switch (e.getStatusCode().value()) {
+	                case 404 -> throw new RuntimeException("Reto no encontrado: " + nombreReto);
+	                default -> throw new RuntimeException("No se pudieron recuperar las sesiones:  " + e.getStatusText());
+	            }
+	        }
+	}
     
 
 }
