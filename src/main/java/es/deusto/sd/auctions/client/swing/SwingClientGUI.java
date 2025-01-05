@@ -22,6 +22,7 @@ import javax.swing.JPasswordField;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
+import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.border.TitledBorder;
@@ -59,9 +60,9 @@ public class SwingClientGUI extends JFrame {
 	public SwingClientGUI(SwingClientController controller) {
 			this.controller = controller;
 			
-//			if(!Login()) {
-//				System.exit(0);
-//			}
+			if(!Login()) {
+				System.exit(0);
+			}
 			
 			
 			pNorte = new JPanel();
@@ -95,7 +96,7 @@ public class SwingClientGUI extends JFrame {
 			ListaRetos = new JList<>();
 			ListaRetos.addListSelectionListener((e)->{
 				if(!e.getValueIsAdjusting()) {
-					//cargarSesionesPorReto
+					cargarSesionesXReto();
 				}
 			});
 			
@@ -123,8 +124,19 @@ public class SwingClientGUI extends JFrame {
 			//JTable de sesiones
 			
 			String[] columnNames = {"Id", "Titulo", "Deporte"};
-			modeloTablaSesiones = new DefaultTableModel(columnNames, 0);
+			 modeloTablaSesiones = new DefaultTableModel(columnNames, 0) {
+		            @Override
+		            public boolean isCellEditable(int row, int column) {
+		                return false; 
+		            }
+		        };
 			tablaSesiones = new JTable(modeloTablaSesiones);
+			tablaSesiones.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+			tablaSesiones.getSelectionModel().addListSelectionListener(e -> {
+				if (!e.getValueIsAdjusting()) {
+					cargarDetallesSesion();
+				}
+			});
 			scrollTablaSesiones = new JScrollPane(tablaSesiones);
 			scrollTablaSesiones.setBorder(new TitledBorder("Sesiones del reto"));
 
@@ -246,7 +258,7 @@ public class SwingClientGUI extends JFrame {
 		}
 	}
 //	
-	private void loadArticleDetails() {
+	private void cargarDetallesSesion() {
 		int selectedRow = tablaSesiones.getSelectedRow();
 
 		if (selectedRow != -1) {
