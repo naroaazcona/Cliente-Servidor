@@ -159,7 +159,7 @@ public class WebClientController {
 	}
 	
 	@GetMapping("/Reto/{id}")
-	public String getArticleDetails(@PathVariable("id") Long id, Model model) {
+	public String getRetoDetails(@PathVariable("id") Long id, Model model) {
 		Reto reto;
 
 		try {
@@ -173,6 +173,7 @@ public class WebClientController {
 		return "Reto";
 	}
 
-	
+
+
 	
 }
