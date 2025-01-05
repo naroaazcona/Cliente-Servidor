@@ -175,7 +175,7 @@ public class WebClientController {
 	}
 
 	@GetMapping("/Reto/{name}")
-	public String getSesionesReto(@PathVariable("nombreDeporte") String nombreReto, Model model) {
+	public String getSesionesReto(@PathVariable("nombreReto") String nombreReto, Model model) {
 		List<Sesion> sesiones;
 		
 		try {

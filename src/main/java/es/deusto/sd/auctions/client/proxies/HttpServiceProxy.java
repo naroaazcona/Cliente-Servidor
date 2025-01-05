@@ -59,6 +59,7 @@ public class HttpServiceProxy implements IAuctionsServiceProxy {
         this.objectMapper = new ObjectMapper();
     }
     
+    
 	@Override
 	public String login(Credendiales credenciales) {
 		 try {
@@ -155,7 +156,7 @@ public class HttpServiceProxy implements IAuctionsServiceProxy {
             String encodedCategoryName = URLEncoder.encode(Deporte, StandardCharsets.UTF_8);
         	
             HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "/auctions/categories/" + encodedCategoryName))
+                .uri(URI.create(BASE_URL + "/auctions/retos/" + encodedCategoryName))
                 .header("Content-Type", "application/json")
                 .GET()
                 .build();
@@ -217,6 +218,32 @@ public class HttpServiceProxy implements IAuctionsServiceProxy {
 		        }
 			
 		}
+
+	@Override
+	public List<Sesion> getSesionesPorReto(String nombreReto) {
+		try {
+            // Encode the category name to handle spaces and special characters
+            String encodedCategoryName = URLEncoder.encode(nombreReto, StandardCharsets.UTF_8);
+        	
+            HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(BASE_URL + "/auctions/retos/" + encodedCategoryName))
+                .header("Content-Type", "application/json")
+                .GET()
+                .build();
+
+            HttpResponse<String> response = httpCliente.send(request, HttpResponse.BodyHandlers.ofString());
+
+            return switch (response.statusCode()) {
+                case 200 -> objectMapper.readValue(response.body(), objectMapper.getTypeFactory().constructCollectionType(List.class, Reto.class));
+                case 204 -> throw new RuntimeException("Not Content: Este reto no tiene sesiones");
+                case 404 -> throw new RuntimeException("Not Found: Reto no encontrado");
+                case 500 -> throw new RuntimeException("Error interno del servidor al buscar retos");
+                default -> throw new RuntimeException("No se pudieron recuperar retos con código de estado: " + response.statusCode());
+            };
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException("Error al obtener los detalles del reto", e);
+        }
+	}
 	
 
 	
