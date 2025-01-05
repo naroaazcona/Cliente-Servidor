@@ -174,7 +174,7 @@ public class WebClientController {
 		return "Reto";
 	}
 
-	@GetMapping("/Reto/{name}")
+	@GetMapping("/Reto/{naombreReto}/sesiones")
 	public String getSesionesReto(@PathVariable("nombreReto") String nombreReto, Model model) {
 		List<Sesion> sesiones;
 		
