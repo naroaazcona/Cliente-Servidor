@@ -47,6 +47,7 @@ public interface IAuctionsServiceProxy {
 	void logout(String token);
 
 	//Metodos de retos
+	List<Reto> getMisRetos(String token);
 	List<Reto> getTodosRetos();
 
 	List<Reto> getRetosXDeporte(String Deporte);

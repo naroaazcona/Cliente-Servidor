@@ -53,7 +53,13 @@ public class SwingClientController {
         serviceProxy.logout(token);
     }
     
-
+    public List<Reto> getMisRetos() {
+        if (token == null) {
+            throw new RuntimeException("Usuario no autenticado");
+        }
+        return serviceProxy.getMisRetos(token);
+   }
+    
    public List<Reto> getTodosRetos(){
 	   return serviceProxy.getTodosRetos();
    }
@@ -76,4 +82,5 @@ public class SwingClientController {
    public Sesion getDetalleDeSesion(Long IdSesion){
 	   return serviceProxy.getDetalleSesion(IdSesion);
    }
+   
 }

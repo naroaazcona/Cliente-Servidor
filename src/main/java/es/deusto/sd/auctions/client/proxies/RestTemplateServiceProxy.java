@@ -171,6 +171,20 @@ public class RestTemplateServiceProxy implements IAuctionsServiceProxy{
 	            }
 	        }
 	}
+
+	@Override
+	public List<Reto> getMisRetos(String token) {
+		String url = apiBaseUrl + "/strava/reto/retosAceptados";
+        
+        try {
+            return restTemplate.getForObject(url, List.class);
+        } catch (HttpStatusCodeException e) {
+            switch (e.getStatusCode().value()) {
+                case 404 -> throw new RuntimeException("Retos no encontrados.");
+                default -> throw new RuntimeException("No se pudieron recuperar los Retos: " + e.getStatusText());
+            }
+        }
+	}
     
 
 }

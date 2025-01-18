@@ -62,8 +62,8 @@ public class SwingClientGUI extends JFrame {
 			
 			if(!Login()) {
 				System.exit(0);
-			}
-			
+		}
+		
 			
 			pNorte = new JPanel();
 			//pNorte.setBackground(Color.GREEN);
@@ -94,6 +94,7 @@ public class SwingClientGUI extends JFrame {
 			
 			//JList de Retos
 			ListaRetos = new JList<>();
+			
 			ListaRetos.addListSelectionListener((e)->{
 				if(!e.getValueIsAdjusting()) {
 					cargarSesionesXReto();
@@ -112,6 +113,7 @@ public class SwingClientGUI extends JFrame {
 				
 				return label;
 			});
+			cargarMisRetos();
 				
 			JScrollPane ListaRetosScrollPane = new JScrollPane(ListaRetos);
 			ListaRetosScrollPane.setBorder(new TitledBorder("Retos"));
@@ -178,8 +180,7 @@ public class SwingClientGUI extends JFrame {
 			
 			
 			
-			
-			
+
 			
 			
 			
@@ -221,6 +222,17 @@ public class SwingClientGUI extends JFrame {
 		} catch (RuntimeException e) {
 			JOptionPane.showMessageDialog(this, e.getMessage());
 		}
+	}
+	
+	private void cargarMisRetos() {
+	    try {
+	        List<Reto> misRetos = controller.getMisRetos();
+	        SwingUtilities.invokeLater(() -> {
+	            ListaRetos.setListData(misRetos.toArray(new Reto[0]));
+	        });
+	    } catch (RuntimeException e) {
+	        JOptionPane.showMessageDialog(this, e.getMessage());
+	    }
 	}
 	
 	private void CargarRetos() {

@@ -8,6 +8,7 @@ package es.deusto.sd.auctions.client.proxies;
 import java.io.IOException;
 
 
+
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
@@ -50,7 +51,7 @@ import es.deusto.sd.auctions.client.data.Sesion;
  * (Description generated with ChatGPT 4o mini)
  */
 public class HttpServiceProxy implements IAuctionsServiceProxy {
-    private static final String BASE_URL = "http://localhost:8081";
+    private static final String BASE_URL = "http://localhost:8080";
     private final HttpClient httpCliente;
     private final ObjectMapper objectMapper;
     
@@ -59,52 +60,131 @@ public class HttpServiceProxy implements IAuctionsServiceProxy {
         this.objectMapper = new ObjectMapper();
     }
     
-    
-	@Override
-	public String login(Credendiales credenciales) {
-		 try {
-	            String credentialsJson = objectMapper.writeValueAsString(credenciales);
-
-	            HttpRequest request = HttpRequest.newBuilder()
-	                .uri(URI.create(BASE_URL + "/auth/login"))
-	                .header("Content-Type", "application/json")
-	                .POST(HttpRequest.BodyPublishers.ofString(credentialsJson))
-	                .build();
-
-	            HttpResponse<String> response = httpCliente.send(request, HttpResponse.BodyHandlers.ofString());
-
-	            return switch (response.statusCode()) {
-	                case 200 -> response.body(); // Successful login, returns token
-	                case 401 -> throw new RuntimeException("No autorizado: credenciales inválidas");
-	                default -> throw new RuntimeException("Error al hacer login con el status code: " + response.statusCode());
-	            };
-	        } catch (IOException | InterruptedException e) {
-	            throw new RuntimeException("Error al iniciar sesión", e);
-	        }
-	    }
-		
+//    
+//	@Override
+//	public String login(Credendiales credenciales) {
+//		 try {
+//	            String credentialsJson = objectMapper.writeValueAsString(credenciales);
+//
+//	            HttpRequest request = HttpRequest.newBuilder()
+//	                .uri(URI.create(BASE_URL + "/autorizacion/login"))
+//	                .header("Content-Type", "application/json")
+//	                .POST(HttpRequest.BodyPublishers.ofString(credentialsJson))
+//	                .build();
+//
+//	            HttpResponse<String> response = httpCliente.send(request, HttpResponse.BodyHandlers.ofString());
+//
+//	            return switch (response.statusCode()) {
+//	                case 200 -> response.body(); // Successful login, returns token
+//	                case 401 -> throw new RuntimeException("No autorizado: credenciales inválidas");
+//	                default -> throw new RuntimeException("Error al hacer login con el status code: " + response.statusCode());
+//	            };
+//	        } catch (IOException | InterruptedException e) {
+//	            throw new RuntimeException("Error al iniciar sesión", e);
+//	        }
+//	    }
+//	
 	
-	@Override
-	public void logout(String token) {
+    //Cloude
+//	@Override
+//	public String login(Credendiales credenciales) {
+//	    try {
+//	        String credentialsJson = objectMapper.writeValueAsString(credenciales);
+//
+//	        HttpRequest request = HttpRequest.newBuilder()
+//	            .uri(URI.create(BASE_URL + "/autorizacion/login"))
+//	            .header("Content-Type", "application/json")
+//	            .POST(HttpRequest.BodyPublishers.ofString(credentialsJson))
+//	            .build();
+//
+//	        HttpResponse<String> response = httpCliente.send(request, HttpResponse.BodyHandlers.ofString());
+//
+//	        // Solo hay dos posibles respuestas según el controlador: 200 y 401
+//	        return switch (response.statusCode()) {
+//	            case 200 -> response.body(); // Token exitoso
+//	            case 401 -> throw new RuntimeException("Credenciales inválidas");
+//	            default -> throw new RuntimeException("Error inesperado en el servidor: " + response.statusCode());
+//	        };
+//	    } catch (IOException | InterruptedException e) {
+//	        throw new RuntimeException("Error de conexión al intentar iniciar sesión", e);
+//	    }
+//	}
 		
-		try {
+    @Override
+    public String login(Credendiales credenciales) {
+        try {
+            String credentialsJson = objectMapper.writeValueAsString(credenciales);
+            
+            System.out.println("Intentando conectar a: " + BASE_URL + "/autorizacion/login");
+            System.out.println("Enviando credenciales: " + credentialsJson);
+
             HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "/auth/logout"))
+                .uri(URI.create(BASE_URL + "/autorizacion/login"))
                 .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(token))
+                .POST(HttpRequest.BodyPublishers.ofString(credentialsJson))
                 .build();
 
-            HttpResponse<Void> response = httpCliente.send(request, HttpResponse.BodyHandlers.discarding());
+            HttpResponse<String> response = httpCliente.send(request, HttpResponse.BodyHandlers.ofString());
+            
+            System.out.println("Código de respuesta: " + response.statusCode());
+            System.out.println("Cuerpo de respuesta: " + response.body());
 
-            switch (response.statusCode()) {
-                case 204 -> {} 
-                case 401 -> throw new RuntimeException("No autorizado: Token no valido, error al hacer logout");
-                default -> throw new RuntimeException("Error al hacer logout con el status code: " + response.statusCode());
-            }
-        } catch (IOException | InterruptedException e) {
-            throw new RuntimeException("Error en el logout", e);
+            return switch (response.statusCode()) {
+                case 200 -> response.body();
+                case 401 -> throw new RuntimeException("Credenciales inválidas");
+                default -> throw new RuntimeException("Error inesperado en el servidor: " + response.statusCode());
+            };
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error de conexión al intentar iniciar sesión: " + e.getMessage(), e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("La operación fue interrumpida", e);
         }
     }
+	
+//	@Override
+//	public void logout(String token) {
+//		
+//		try {
+//            HttpRequest request = HttpRequest.newBuilder()
+//                .uri(URI.create(BASE_URL + "/autorizacion/logout"))
+//                .header("Content-Type", "application/json")
+//                .POST(HttpRequest.BodyPublishers.ofString(token))
+//                .build();
+//
+//            HttpResponse<Void> response = httpCliente.send(request, HttpResponse.BodyHandlers.discarding());
+//
+//            switch (response.statusCode()) {
+//                case 204 -> {} 
+//                case 401 -> throw new RuntimeException("No autorizado: Token no valido, error al hacer logout");
+//                default -> throw new RuntimeException("Error al hacer logout con el status code: " + response.statusCode());
+//            }
+//        } catch (IOException | InterruptedException e) {
+//            throw new RuntimeException("Error en el logout", e);
+//        }
+//    }
+	@Override
+	public void logout(String token) {
+	    try {
+	        HttpRequest request = HttpRequest.newBuilder()
+	            .uri(URI.create(BASE_URL + "/autorizacion/logout"))
+	            .header("Content-Type", "application/json")
+	            .POST(HttpRequest.BodyPublishers.ofString(token))
+	            .build();
+
+	        HttpResponse<Void> response = httpCliente.send(request, HttpResponse.BodyHandlers.discarding());
+
+	        // Solo hay dos posibles respuestas según el controlador: 204 y 401
+	        switch (response.statusCode()) {
+	            case 204 -> {} // Logout exitoso, no hacer nada
+	            case 401 -> throw new RuntimeException("Token inválido");
+	            default -> throw new RuntimeException("Error inesperado en el servidor: " + response.statusCode());
+	        }
+	    } catch (IOException | InterruptedException e) {
+	        throw new RuntimeException("Error de conexión al intentar cerrar sesión", e);
+	    }
+	}
 	@Override
 	public List<Reto> getTodosRetos() {
 		try {
@@ -244,8 +324,74 @@ public class HttpServiceProxy implements IAuctionsServiceProxy {
             throw new RuntimeException("Error al obtener los detalles del reto", e);
         }
 	}
-	
 
+	
+//	@Override
+//	public List<Reto> getMisRetos(String token) {
+//	    try {
+//	        HttpRequest request = HttpRequest.newBuilder()
+//	            .uri(URI.create(BASE_URL + "/strava/retos/retosAceptados?Token=" + URLEncoder.encode(token, StandardCharsets.UTF_8)))
+//	            .header("Content-Type", "application/json")
+//	            .header("Authorization", "Bearer " + token)  // Envía el token en el header
+//	            .GET()
+//	            .build();
+//
+//	        HttpResponse<String> response = httpCliente.send(request, HttpResponse.BodyHandlers.ofString());
+//	        
+//	        return switch (response.statusCode()) {
+//	            case 200 -> objectMapper.readValue(response.body(), 
+//	                objectMapper.getTypeFactory().constructCollectionType(List.class, Reto.class));
+//	            case 401 -> throw new RuntimeException("Token no válido o expirado");
+//	            case 404 -> throw new RuntimeException("No se encontraron retos para este usuario");
+//	            default -> throw new RuntimeException("Error al obtener los retos: " + response.statusCode());
+//	        };
+//	    } catch (IOException | InterruptedException e) {
+//	        throw new RuntimeException("Error al obtener los retos del usuario", e);
+//	    }
+//	}
+//	
+	@Override
+	public List<Reto> getMisRetos(String token) {
+	    try {
+	        System.out.println("Intentando obtener retos aceptados del usuario...");
+	        
+	        // Construir la URL con el parámetro de token
+	        String url = BASE_URL + "/strava/reto/retosAceptados?Token=" + URLEncoder.encode(token, StandardCharsets.UTF_8);
+	        System.out.println("Enviando petición a: " + url);
+	        
+	        HttpRequest request = HttpRequest.newBuilder()
+	            .uri(URI.create(url))
+	            .header("Content-Type", "application/json")
+	            .GET()
+	            .build();
+
+	        HttpResponse<String> response = httpCliente.send(request, HttpResponse.BodyHandlers.ofString());
+	        
+	        System.out.println("Código de estado de la respuesta: " + response.statusCode());
+	        System.out.println("Cuerpo de la respuesta: " + response.body());
+	        
+	        return switch (response.statusCode()) {
+	            case 200 -> {
+	                List<Reto> retos = objectMapper.readValue(response.body(), 
+	                    objectMapper.getTypeFactory().constructCollectionType(List.class, Reto.class));
+	                System.out.println("Se analizaron con éxito " + retos.size() + " retos");
+	                yield retos;
+	            }
+	            case 204 -> throw new RuntimeException("No hay retos aceptados para este usuario");
+	            case 401 -> throw new RuntimeException("Token no válido");
+	            default -> throw new RuntimeException("Error inesperado al obtener los retos. Código: " + response.statusCode() + 
+	                ", Respuesta: " + response.body());
+	        };
+	    } catch (IOException e) {
+	        System.err.println("Error de IO: " + e.getMessage());
+	        e.printStackTrace();
+	        throw new RuntimeException("Error de conexión al obtener los retos: " + e.getMessage());
+	    } catch (InterruptedException e) {
+	        System.err.println("Error de interrupción: " + e.getMessage());
+	        Thread.currentThread().interrupt();
+	        throw new RuntimeException("La operación fue interrumpida");
+	    }
+	}
 	
 	
 }
