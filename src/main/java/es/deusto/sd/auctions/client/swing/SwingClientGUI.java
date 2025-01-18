@@ -43,13 +43,17 @@ public class SwingClientGUI extends JFrame {
 
 	// Controller instance
 	private final SwingClientController controller;
+	
 
 	// Default login credentials
 	private String defaultEmail = "gorka.ortuzar@gmail.com";
 	private String defaultPassword = "1";
+    private String token;
 	
 	private JPanel pNorte,pCentro,pEste,pOeste;
 	private JList<Reto> ListaRetos;
+	private JList<Sesion> ListaSesiones;
+
 	
 	private DefaultTableModel modeloTablaSesiones;
 	private JTable tablaSesiones;
@@ -60,10 +64,14 @@ public class SwingClientGUI extends JFrame {
 	public SwingClientGUI(SwingClientController controller) {
 			this.controller = controller;
 			
-			if(!Login()) {
+			if(!login()) {
 				System.exit(0);
 		}
 		
+			 if (token != null) {
+		            CargarRetos();
+		        }
+		    
 			
 			pNorte = new JPanel();
 			//pNorte.setBackground(Color.GREEN);
@@ -127,18 +135,26 @@ public class SwingClientGUI extends JFrame {
 			
 			String[] columnNames = {"Id", "Titulo", "Deporte"};
 			 modeloTablaSesiones = new DefaultTableModel(columnNames, 0) {
+				 	
 		            @Override
 		            public boolean isCellEditable(int row, int column) {
 		                return false; 
+		             
+		                
+		                
+		  
 		            }
 		        };
 			tablaSesiones = new JTable(modeloTablaSesiones);
-			tablaSesiones.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+	        tablaSesiones.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 			tablaSesiones.getSelectionModel().addListSelectionListener(e -> {
+				
 				if (!e.getValueIsAdjusting()) {
 					cargarDetallesSesion();
 				}
 			});
+		        
+		  
 			scrollTablaSesiones = new JScrollPane(tablaSesiones);
 			scrollTablaSesiones.setBorder(new TitledBorder("Sesiones del reto"));
 
@@ -192,27 +208,36 @@ public class SwingClientGUI extends JFrame {
 	
 	}
 	
-	private boolean Login() {
-		JTextField email = new JTextField(20);
-		email.setText(defaultEmail);
-		JPasswordField contrasenia = new JPasswordField(20);
-		contrasenia.setText(defaultPassword);
+	 private boolean login() {
+	        JTextField email = new JTextField(20);
+	        email.setText(defaultEmail);
+	        JPasswordField contrasenia = new JPasswordField(20);
+	        contrasenia.setText(defaultPassword);
 
-		Object[] message = { new JLabel("Introduce Email:"), email, new JLabel("Introduce Contraseña:"), contrasenia};
+	        Object[] message = {
+	            new JLabel("Introduce Email:"), email,
+	            new JLabel("Introduce Contraseña:"), contrasenia
+	        };
 
-		int option = JOptionPane.showConfirmDialog(this, message, "Login", JOptionPane.OK_CANCEL_OPTION);
+	        int option = JOptionPane.showConfirmDialog(this, message, "Login", JOptionPane.OK_CANCEL_OPTION);
 
-		if (option == JOptionPane.OK_OPTION) {
-			try {
-				return controller.login(email.getText(), new String(contrasenia.getPassword()));
-			} catch (RuntimeException e) {
-				JOptionPane.showMessageDialog(this, e.getMessage());
-				return false;
-			}
-		} else {
-			return false;
-		}
-	}
+	        if (option == JOptionPane.OK_OPTION) {
+	            try {
+	                // Actualizar el controlador para devolver el token
+	                Boolean loginExitoso = controller.login(email.getText(), new String(contrasenia.getPassword()));
+	                if (loginExitoso) {
+	                    this.token = controller.getToken();  // Almacenar el token
+	                    CargarSesiones(this.token);
+	                    return true;
+	                }
+	                return false;
+	            } catch (RuntimeException e) {
+	                JOptionPane.showMessageDialog(this, e.getMessage());
+	                return false;
+	            }
+	        }
+	        return false;
+	    }
 
 	private void performLogout() {
 		try {
@@ -237,14 +262,40 @@ public class SwingClientGUI extends JFrame {
 	
 	private void CargarRetos() {
 		try {
-			List<Reto> categories = controller.getTodosRetos();
+			List<Reto> retos = controller.getTodosRetos();
 
 			SwingUtilities.invokeLater(() -> {
-				ListaRetos.setListData(categories.toArray(new Reto[0]));
+				ListaRetos.setListData(retos.toArray(new Reto[0]));
 			});
 		} catch (RuntimeException e) {
 			JOptionPane.showMessageDialog(this, e.getMessage());
 		}
+	}
+	
+	private void CargarSesiones(String token) {
+	    try {
+	        List<Sesion> sesiones = controller.getTodasSesiones(token);
+
+	        SwingUtilities.invokeLater(() -> {
+	            // Limpiar la tabla actual
+	            DefaultTableModel model = (DefaultTableModel) tablaSesiones.getModel();
+	            model.setRowCount(0);
+
+	            // Añadir cada sesión a la tabla
+	            for (Sesion sesion : sesiones) {
+	                model.addRow(new Object[]{
+	                    sesion.id(),
+	                    sesion.titulo(),
+	                    sesion.deporte()
+	                });
+	            }
+	            
+	            // Refrescar la tabla
+	            tablaSesiones.repaint();
+	        });
+	    } catch (RuntimeException e) {
+	        JOptionPane.showMessageDialog(this, e.getMessage());
+	    }
 	}
 	
 	//Cargar
@@ -293,9 +344,13 @@ public class SwingClientGUI extends JFrame {
 			}
 		}
 	}
-	
-	
-	
+	 public String getToken() {
+	        return token;
+	    }
+
+	    public void setToken(String token) {
+	        this.token = token;
+	    }
 	public static void main(String[] args) {
 		SwingUtilities.invokeLater(() -> new SwingClientGUI(new SwingClientController()));
 	}

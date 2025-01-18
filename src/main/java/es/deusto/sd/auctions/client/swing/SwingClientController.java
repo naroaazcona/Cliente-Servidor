@@ -38,6 +38,16 @@ public class SwingClientController {
 	// Token to be used during the session
     private String token;
 
+    
+    
+	public String getToken() {
+		return token;
+	}
+
+	public void setToken(String token) {
+		this.token = token;
+	}
+
 	public boolean login(String email, String contrasenia) {
         try {
             Credendiales credenciales = new Credendiales(email, contrasenia);
@@ -71,8 +81,8 @@ public class SwingClientController {
 	   return serviceProxy.getDetallesDeReto(IdReto);
    }
    
-   public List<Sesion> getTodasSesiones(){
-	   return serviceProxy.getTodasSesiones();
+   public List<Sesion> getTodasSesiones(String token){
+	   return serviceProxy.getTodasSesiones(token);
    }
    public List<Sesion> getSesionesXReto(String NombreReto){
 	   //hacer el metodo en el serviceProxy

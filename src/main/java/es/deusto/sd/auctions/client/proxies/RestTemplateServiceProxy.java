@@ -100,7 +100,7 @@ public class RestTemplateServiceProxy implements IAuctionsServiceProxy{
 	}
 
 	@Override
-	public List<Sesion> getTodasSesiones() {
+	public List<Sesion> getTodasSesiones(String token) {
 		// TODO Auto-generated method stub
 		return null;
 	}

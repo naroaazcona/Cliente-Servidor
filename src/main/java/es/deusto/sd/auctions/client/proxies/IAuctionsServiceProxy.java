@@ -56,7 +56,7 @@ public interface IAuctionsServiceProxy {
   	
   	List<Sesion> getSesionesPorReto(String nombreReto);
 
-  	List<Sesion> getTodasSesiones();
+  	List<Sesion> getTodasSesiones(String token);
   	Sesion getDetalleSesion(Long idSesion);
   	
 }

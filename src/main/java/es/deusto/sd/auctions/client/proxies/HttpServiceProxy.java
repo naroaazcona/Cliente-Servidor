@@ -267,25 +267,73 @@ public class HttpServiceProxy implements IAuctionsServiceProxy {
     }
 
 	@Override
-	public List<Sesion> getTodasSesiones() {
-		try {
-            HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "/strava/sesiones/usuario"))
-                .header("Content-Type", "application/json")
-                .GET()
-                .build();
-            HttpResponse<String> response = httpCliente.send(request, HttpResponse.BodyHandlers.ofString());
-            
-            return switch (response.statusCode()) {
-            case 200 -> objectMapper.readValue(response.body(), objectMapper.getTypeFactory().constructCollectionType(List.class, Sesion.class));
-            case 204 -> throw new RuntimeException("Contenido no encontrado: No se han encontrado sesiones");
-            case 500 -> throw new RuntimeException("Error interno del servidor al buscar sesiones");
-            default -> throw new RuntimeException("No se pudieron recuperar sesiones con código de estado: " + response.statusCode());
-            };
-			}catch (IOException | InterruptedException e) {
-	            throw new RuntimeException("Error al obtener las sesiones", e);
-	        }		
+	public List<Sesion> getTodasSesiones(String token) {
+	    try {
+	        System.out.println("Intentando obtener todas las sesiones del usuario...");
+	        
+	        HttpRequest request = HttpRequest.newBuilder()
+	            .uri(URI.create(BASE_URL + "/strava/sesion/usuario?token=" + URLEncoder.encode(token, StandardCharsets.UTF_8)))
+	            .header("Content-Type", "application/json")
+	            .GET()
+	            .build();
+
+	        HttpResponse<String> response = httpCliente.send(request, HttpResponse.BodyHandlers.ofString());
+	        
+	        System.out.println("Código de respuesta: " + response.statusCode());
+	        System.out.println("Cuerpo de respuesta: " + response.body());
+	        
+	        return switch (response.statusCode()) {
+	            case 200 -> {
+	                List<Sesion> sesiones = objectMapper.readValue(response.body(), 
+	                    objectMapper.getTypeFactory().constructCollectionType(List.class, Sesion.class));
+	                System.out.println("Se obtuvieron " + sesiones.size() + " sesiones exitosamente");
+	                yield sesiones;
+	            }
+	            case 204 -> throw new RuntimeException("No se encontraron sesiones para este usuario");
+	            case 401 -> throw new RuntimeException("Token no válido");
+	            case 500 -> throw new RuntimeException("Error interno del servidor");
+	            default -> throw new RuntimeException("Error inesperado al obtener las sesiones. Código: " + response.statusCode());
+	        };
+	    } catch (IOException | InterruptedException e) {
+	        System.err.println("Error al obtener las sesiones: " + e.getMessage());
+	        throw new RuntimeException("Error al obtener las sesiones del usuario", e);
+	    }
 	}
+	
+//	@Override
+//	public List<Sesion> getTodasSesiones() {
+//	    try {
+//	        System.out.println("Intentando obtener todas las sesiones del usuario...");
+//	        
+//	        HttpRequest request = HttpRequest.newBuilder()
+//	            .uri(URI.create(BASE_URL + "/strava/sesion/usuario?token=" + URLEncoder.encode(token, StandardCharsets.UTF_8)))
+//	            .header("Content-Type", "application/json")
+//	            .GET()
+//	            .build();
+//
+//	        HttpResponse<String> response = httpCliente.send(request, HttpResponse.BodyHandlers.ofString());
+//	        
+//	        System.out.println("Código de respuesta: " + response.statusCode());
+//	        System.out.println("Cuerpo de respuesta: " + response.body());
+//	        
+//	        return switch (response.statusCode()) {
+//	            case 200 -> {
+//	                List<Sesion> sesiones = objectMapper.readValue(response.body(), 
+//	                    objectMapper.getTypeFactory().constructCollectionType(List.class, Sesion.class));
+//	                System.out.println("Se obtuvieron " + sesiones.size() + " sesiones exitosamente");
+//	                yield sesiones;
+//	            }
+//	            case 204 -> throw new RuntimeException("No se encontraron sesiones para este usuario");
+//	            case 401 -> throw new RuntimeException("Token no válido");
+//	            case 500 -> throw new RuntimeException("Error interno del servidor");
+//	            default -> throw new RuntimeException("Error inesperado al obtener las sesiones. Código: " + response.statusCode());
+//	        };
+//	    } catch (IOException | InterruptedException e) {
+//	        System.err.println("Error al obtener las sesiones: " + e.getMessage());
+//	        throw new RuntimeException("Error al obtener las sesiones del usuario", e);
+//	    }
+//	}
+//	
 
 	@Override
 	public Sesion getDetalleSesion(Long idSesion) {
