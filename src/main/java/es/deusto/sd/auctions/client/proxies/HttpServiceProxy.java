@@ -187,23 +187,34 @@ public class HttpServiceProxy implements IAuctionsServiceProxy {
 	}
 	@Override
 	public List<Reto> getTodosRetos() {
-		try {
-            HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "/auctions/retos"))
-                .header("Content-Type", "application/json")
-                .GET()
-                .build();
-            HttpResponse<String> response = httpCliente.send(request, HttpResponse.BodyHandlers.ofString());
-            
-            return switch (response.statusCode()) {
-            case 200 -> objectMapper.readValue(response.body(), objectMapper.getTypeFactory().constructCollectionType(List.class, Reto.class));
-            case 204 -> throw new RuntimeException("Contenido no encontrado: No se han encontrado retos");
-            case 500 -> throw new RuntimeException("Error interno del servidor al buscar retos");
-            default -> throw new RuntimeException("No se pudieron recuperar retos con código de estado: " + response.statusCode());
-            };
-			}catch (IOException | InterruptedException e) {
-	            throw new RuntimeException("Error while fetching categories", e);
-	        }		
+	    try {
+	        // El endpoint correcto es "/strava/retos" según el controlador, no "/auctions/retos"
+	        HttpRequest request = HttpRequest.newBuilder()
+	            .uri(URI.create(BASE_URL + "/strava/retos"))
+	            .header("Content-Type", "application/json")
+	            .GET()
+	            .build();
+
+	        System.out.println("Intentando obtener todos los retos...");
+	        HttpResponse<String> response = httpCliente.send(request, HttpResponse.BodyHandlers.ofString());
+	        
+	        System.out.println("Código de respuesta: " + response.statusCode());
+	        System.out.println("Cuerpo de respuesta: " + response.body());
+	        
+	        return switch (response.statusCode()) {
+	            case 200 -> {
+	                List<Reto> retos = objectMapper.readValue(response.body(), 
+	                    objectMapper.getTypeFactory().constructCollectionType(List.class, Reto.class));
+	                System.out.println("Se obtuvieron " + retos.size() + " retos exitosamente");
+	                yield retos;
+	            }
+	            case 500 -> throw new RuntimeException("Error interno del servidor al buscar retos");
+	            default -> throw new RuntimeException("No se pudieron recuperar retos. Código: " + response.statusCode());
+	        };
+	    } catch (IOException | InterruptedException e) {
+	        System.err.println("Error al obtener los retos: " + e.getMessage());
+	        throw new RuntimeException("Error al obtener los retos", e);
+	    }
 	}
 
 	@Override
@@ -259,7 +270,7 @@ public class HttpServiceProxy implements IAuctionsServiceProxy {
 	public List<Sesion> getTodasSesiones() {
 		try {
             HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "/auctions/sesiones"))
+                .uri(URI.create(BASE_URL + "/strava/sesiones/usuario"))
                 .header("Content-Type", "application/json")
                 .GET()
                 .build();

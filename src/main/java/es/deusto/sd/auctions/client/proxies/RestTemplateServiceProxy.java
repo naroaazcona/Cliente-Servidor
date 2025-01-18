@@ -18,33 +18,7 @@ import es.deusto.sd.auctions.client.data.Credendiales;
 import es.deusto.sd.auctions.client.data.Reto;
 import es.deusto.sd.auctions.client.data.Sesion;
 
-/**
- * RestTemplateServiceProxy class is an implementation of the Service Proxy design pattern.
- * This class acts as an intermediary between the client and the RESTful web service,
- * encapsulating all the REST API calls using Spring's RestTemplate and handling various 
- * exceptions that may occur during these interactions. This class serves as an intermediary 
- * for the client to perform CRUD operations, such as user authentication (login/logout),
- * retrieving categories and articles, and placing bids on articles. By encapsulating 
- * the HTTP request logic and handling various exceptions, this proxy provides a cleaner 
- * interface for clients to interact with the underlying service.
- * 
- * The @Service annotation indicates that this class is a Spring service component, 
- * which allows it to be detected and managed by the Spring container. This enables 
- * dependency injection for the RestTemplate instance, promoting loose coupling and 
- * enhancing testability.
- * 
- * RestTemplate is a synchronous client provided by Spring for making HTTP requests. 
- * It simplifies the interaction with RESTful services by providing a higher-level 
- * abstraction over the lower-level `HttpURLConnection`. Particularities of using 
- * RestTemplate include its capability to automatically convert HTTP responses into 
- * Java objects using message converters, support for various HTTP methods (GET, POST, 
- * PUT, DELETE), and built-in error handling mechanisms. However, it's important to 
- * note that since RestTemplate is synchronous, it can block the calling thread, which 
- * may not be suitable for high-performance applications that require non-blocking 
- * behavior.
- * 
- * (Description generated with ChatGPT 4o mini)
- */
+
 @Service
 public class RestTemplateServiceProxy implements IAuctionsServiceProxy{
 
@@ -59,7 +33,7 @@ public class RestTemplateServiceProxy implements IAuctionsServiceProxy{
 
 	@Override
 	public String login(Credendiales credenciales) {
-		 String url = apiBaseUrl + "/auth/login";
+		 String url = apiBaseUrl + "/autorizacion/login";
 	        
 	        try {
 	            return restTemplate.postForObject(url, credenciales, String.class);
@@ -73,7 +47,7 @@ public class RestTemplateServiceProxy implements IAuctionsServiceProxy{
 
 	@Override
 	public void logout(String token) {
-		   String url = apiBaseUrl + "/auth/logout";
+		   String url = apiBaseUrl + "/autorizacion/logout";
 	        
 	        try {
 	            restTemplate.postForObject(url, token, Void.class);
@@ -85,92 +59,7 @@ public class RestTemplateServiceProxy implements IAuctionsServiceProxy{
 	        }
 	    }
 
-	@SuppressWarnings("unchecked")
-	@Override
-	public List<Reto> getTodosRetos() {
-		String url = apiBaseUrl + "/auctions/retos";
-        
-        try {
-            return restTemplate.getForObject(url, List.class);
-        } catch (HttpStatusCodeException e) {
-            switch (e.getStatusCode().value()) {
-                case 404 -> throw new RuntimeException("Retos no encontrados.");
-                default -> throw new RuntimeException("No se pudieron recuperar los Retos: " + e.getStatusText());
-            }
-        }
-    }
-
-	@Override
-	public Reto getDetallesDeReto(Long IdReto) {
-		String url = apiBaseUrl + "/auctions/retos/" + IdReto;
-        
-        try {
-            return restTemplate.getForObject(url, Reto.class);
-        } catch (HttpStatusCodeException e) {
-            switch (e.getStatusCode().value()) {
-                case 404 -> throw new RuntimeException("Reto no encontrado: ID " + IdReto);
-                default -> throw new RuntimeException("No se pudieron recuperar los detalles del Reto  " + e.getStatusText());
-            }
-        }
-    }
-
-	@SuppressWarnings("unchecked")
-	@Override
-	public List<Reto> getRetosXDeporte(String Deporte) {
-		  String url = apiBaseUrl + "/auctions/Retos/" + Deporte;
-		  try{
-	           return restTemplate.getForObject(url, List.class);
-	        } catch (HttpStatusCodeException e) {
-	            switch (e.getStatusCode().value()) {
-	                case 404 -> throw new RuntimeException("Deporte no encontrado: " + Deporte);
-	                default -> throw new RuntimeException("No se pudieron recuperar los Retos:  " + e.getStatusText());
-	            }
-	        }
-	}
-
-	@SuppressWarnings("unchecked")
-	@Override
-	public List<Sesion> getTodasSesiones() {
-       String url = apiBaseUrl + "/auctions/Sesiones";
-        
-        try {
-            return restTemplate.getForObject(url, List.class);
-        } catch (HttpStatusCodeException e) {
-            switch (e.getStatusCode().value()) {
-                case 404 -> throw new RuntimeException("Sesiones no encontradas.");
-                default -> throw new RuntimeException("No se pudieron recuperar las Sesiones: " + e.getStatusText());
-            }
-        }
-    }
 	
-
-	@Override
-	public Sesion getDetalleSesion(Long IdSesion) {
-		String url = apiBaseUrl + "/auctions/Sesion/" + IdSesion ;
-        
-        try {
-            return restTemplate.getForObject(url, Sesion.class);
-        } catch (HttpStatusCodeException e) {
-            switch (e.getStatusCode().value()) {
-                case 404 -> throw new RuntimeException("Sesion no encontrada: ID " + IdSesion);
-                default -> throw new RuntimeException("No se pudieron recuperar los detalles de la Sesion  " + e.getStatusText());
-            }
-        }
-    }
-
-	@SuppressWarnings("unchecked")
-	@Override
-	public List<Sesion> getSesionesPorReto(String nombreReto) {
-		 String url = apiBaseUrl + "/auctions/Retos/" + nombreReto;
-		  try{
-	           return restTemplate.getForObject(url, List.class);
-	        } catch (HttpStatusCodeException e) {
-	            switch (e.getStatusCode().value()) {
-	                case 404 -> throw new RuntimeException("Reto no encontrado: " + nombreReto);
-	                default -> throw new RuntimeException("No se pudieron recuperar las sesiones:  " + e.getStatusText());
-	            }
-	        }
-	}
 
 	@Override
 	public List<Reto> getMisRetos(String token) {
@@ -184,6 +73,42 @@ public class RestTemplateServiceProxy implements IAuctionsServiceProxy{
                 default -> throw new RuntimeException("No se pudieron recuperar los Retos: " + e.getStatusText());
             }
         }
+	}
+
+	@Override
+	public List<Reto> getTodosRetos() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public List<Reto> getRetosXDeporte(String Deporte) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Reto getDetallesDeReto(Long IdReto) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public List<Sesion> getSesionesPorReto(String nombreReto) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public List<Sesion> getTodasSesiones() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Sesion getDetalleSesion(Long idSesion) {
+		// TODO Auto-generated method stub
+		return null;
 	}
     
 

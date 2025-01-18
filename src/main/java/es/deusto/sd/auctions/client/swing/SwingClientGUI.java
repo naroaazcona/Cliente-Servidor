@@ -102,7 +102,7 @@ public class SwingClientGUI extends JFrame {
 			});
 			
 			ListaRetos.setCellRenderer((list, value, index, isSelected, cellHasFocus) -> {
-				JLabel label = new JLabel(value.NombreReto());
+				JLabel label = new JLabel(value.nombre());
 				label.setBackground(list.getBackground());
 				label.setOpaque(true);
 			
@@ -113,7 +113,7 @@ public class SwingClientGUI extends JFrame {
 				
 				return label;
 			});
-			cargarMisRetos();
+			CargarRetos();
 				
 			JScrollPane ListaRetosScrollPane = new JScrollPane(ListaRetos);
 			ListaRetosScrollPane.setBorder(new TitledBorder("Retos"));
@@ -254,7 +254,7 @@ public class SwingClientGUI extends JFrame {
 
 		if (retoSeleccionado != null) {
 			try {
-				List<Sesion> sesiones = controller.getSesionesXReto(retoSeleccionado.NombreReto());
+				List<Sesion> sesiones = controller.getSesionesXReto(retoSeleccionado.nombre());
 
 				SwingUtilities.invokeLater(() -> {
 					DefaultTableModel model = (DefaultTableModel) tablaSesiones.getModel();

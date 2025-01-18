@@ -50,7 +50,7 @@ public class ConsoleClient {
 			if(retos == null || retos.isEmpty()) {
 				return false;
 			}
-			retos.forEach(reto->reto.NombreReto());
+			retos.forEach(reto->reto.nombre());
 			return true;
 		}catch (RuntimeException e) {
 			throw new RuntimeException("\n" + "Error al obtener los retos", e);
