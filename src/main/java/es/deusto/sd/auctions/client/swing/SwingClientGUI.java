@@ -52,7 +52,6 @@ public class SwingClientGUI extends JFrame {
 	
 	private JPanel pNorte,pCentro,pEste,pOeste;
 	private JList<Reto> ListaRetos;
-	private JList<Sesion> ListaSesiones;
 
 	
 	private DefaultTableModel modeloTablaSesiones;
@@ -69,7 +68,7 @@ public class SwingClientGUI extends JFrame {
 		}
 		
 			 if (token != null) {
-		            CargarRetos();
+		            cargarMisRetos();
 		        }
 		    
 			
@@ -227,7 +226,6 @@ public class SwingClientGUI extends JFrame {
 	                Boolean loginExitoso = controller.login(email.getText(), new String(contrasenia.getPassword()));
 	                if (loginExitoso) {
 	                    this.token = controller.getToken();  // Almacenar el token
-	                    CargarSesiones(this.token);
 	                    return true;
 	                }
 	                return false;
@@ -251,15 +249,24 @@ public class SwingClientGUI extends JFrame {
 	
 	private void cargarMisRetos() {
 	    try {
-	        List<Reto> misRetos = controller.getMisRetos();
+	        // Verificar que tenemos el token
+	        if (token == null) {
+	            System.err.println("No hay token disponible para cargar los retos");
+	            return;
+	        }
+
+	        System.out.println("Cargando mis retos con token: " + token);
+	        List<Reto> misRetos = controller.getMisRetos(token);  // Pasar el token
+	        
 	        SwingUtilities.invokeLater(() -> {
 	            ListaRetos.setListData(misRetos.toArray(new Reto[0]));
+	            System.out.println("Retos cargados: " + misRetos.size());
 	        });
 	    } catch (RuntimeException e) {
-	        JOptionPane.showMessageDialog(this, e.getMessage());
+	        System.err.println("Error al cargar mis retos: " + e.getMessage());
+	        JOptionPane.showMessageDialog(this, "Error al cargar tus retos: " + e.getMessage());
 	    }
 	}
-	
 	private void CargarRetos() {
 		try {
 			List<Reto> retos = controller.getTodosRetos();
@@ -273,9 +280,10 @@ public class SwingClientGUI extends JFrame {
 	}
 	
 	private void CargarSesiones(String token) {
-	    try {
-	        List<Sesion> sesiones = controller.getTodasSesiones(token);
-
+	    System.out.println("Cargando sesiones con token: " + token);
+	    	    try {
+	    	        List<Sesion> sesiones = controller.getTodasSesiones(token);
+	    	        System.out.println("Sesiones obtenidas: " + (sesiones != null ? sesiones.size(): null));
 	        SwingUtilities.invokeLater(() -> {
 	            // Limpiar la tabla actual
 	            DefaultTableModel model = (DefaultTableModel) tablaSesiones.getModel();
@@ -294,6 +302,8 @@ public class SwingClientGUI extends JFrame {
 	            tablaSesiones.repaint();
 	        });
 	    } catch (RuntimeException e) {
+	        System.err.println("Error al cargar sesiones: " + e.getMessage());
+
 	        JOptionPane.showMessageDialog(this, e.getMessage());
 	    }
 	}
@@ -302,10 +312,10 @@ public class SwingClientGUI extends JFrame {
 
 	private void cargarSesionesXReto() {
 		Reto retoSeleccionado = ListaRetos.getSelectedValue();
-
+		System.out.println(retoSeleccionado);
 		if (retoSeleccionado != null) {
 			try {
-				List<Sesion> sesiones = controller.getSesionesXReto(retoSeleccionado.nombre());
+				List<Sesion> sesiones = controller.getSesionesXReto(retoSeleccionado.id());
 
 				SwingUtilities.invokeLater(() -> {
 					DefaultTableModel model = (DefaultTableModel) tablaSesiones.getModel();
@@ -321,29 +331,62 @@ public class SwingClientGUI extends JFrame {
 		}
 	}
 //	
+	
+	
 	private void cargarDetallesSesion() {
-		int selectedRow = tablaSesiones.getSelectedRow();
+	    int selectedRow = tablaSesiones.getSelectedRow();
 
-		if (selectedRow != -1) {
-			Long sesionId = (Long) tablaSesiones.getValueAt(selectedRow, 0);
+	    if (selectedRow != -1) {
+	        try {
+	            // Obtener el ID de la sesión seleccionada
+	            Object idObj = tablaSesiones.getValueAt(selectedRow, 0);
+	            Long sesionId = null;
+	            
+	            // Convertir el ID al tipo correcto
+	            if (idObj instanceof Long) {
+	                sesionId = (Long) idObj;
+	            } else if (idObj instanceof Integer) {
+	                sesionId = ((Integer) idObj).longValue();
+	            } else if (idObj instanceof String) {
+	                sesionId = Long.parseLong((String) idObj);
+	            }
 
-			try {
-				Sesion sesion = controller.getDetalleDeSesion(sesionId);
+	            if (sesionId != null) {
+	                Sesion sesion = controller.getDetalleDeSesion(sesionId);
+	                
+	                // Actualizar la UI con valores seguros
+	                SwingUtilities.invokeLater(() -> {
+	                    // Usar getters seguros que manejan nulls
+	                    lblTitulo.setText(sesion != null && sesion.titulo() != null ? sesion.titulo() : "N/A");
+	                    lblDeporte.setText(sesion != null && sesion.deporte() != null ? sesion.deporte() : "N/A");
+	                    lblDistancia.setText(sesion != null && sesion.distancia() != null ? 
+	                        sesion.distancia().toString() + " km" : "N/A");
+	                    lblHoraInicio.setText(sesion != null && sesion.horaInicio() != null ? 
+	                        sesion.horaInicio().toString() : "N/A");
+	                    lblHoraFin.setText(sesion != null && sesion.horaFin() != null ? 
+	                        sesion.horaFin().toString() : "N/A");
+	                    lblDuracion.setText(sesion != null && sesion.duracion() != null ? 
+	                        sesion.duracion().toString() + " min" : "N/A");
+	                });
 
-				SwingUtilities.invokeLater(() -> {
-					lblTitulo.setText(sesion.titulo());
-					lblDeporte.setText(sesion.deporte());
-					lblDistancia.setText(sesion.duracion().toString());
-					lblHoraInicio.setText(sesion.horaInicio().toString());
-					lblHoraFin.setText(sesion.horaFin().toString());
-					lblDuracion.setText(sesion.distancia().toString());
-					
-				});
-			} catch (RuntimeException e) {
-				JOptionPane.showMessageDialog(this, e.getMessage());
-			}
-		}
+	                // Añadir log para debug
+	                System.out.println("Cargando detalles de sesión: " + sesionId);
+	                if (sesion != null) {
+	                    System.out.println("Sesión encontrada: " + sesion.titulo());
+	                }
+	            }
+	        } catch (RuntimeException e) {
+	            System.err.println("Error al cargar detalles de sesión: " + e.getMessage());
+	            e.printStackTrace();
+	            JOptionPane.showMessageDialog(this, 
+	                "Error al cargar detalles de la sesión: " + e.getMessage(), 
+	                "Error", 
+	                JOptionPane.ERROR_MESSAGE);
+	        }
+	    }
 	}
+	
+
 	 public String getToken() {
 	        return token;
 	    }

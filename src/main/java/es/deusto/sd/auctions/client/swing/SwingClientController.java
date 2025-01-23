@@ -63,11 +63,16 @@ public class SwingClientController {
         serviceProxy.logout(token);
     }
     
-    public List<Reto> getMisRetos() {
-        if (token == null) {
-            throw new RuntimeException("Usuario no autenticado");
-        }
-        return serviceProxy.getMisRetos(token);
+    public List<Reto> getMisRetos(String token) {
+    	try {
+            if (token == null) {
+                throw new RuntimeException("No hay sesión activa");
+            }
+            return serviceProxy.getMisRetos(token);
+        } catch (Exception e) {
+            throw new RuntimeException("No se pudieron obtener tus retos: " + e.getMessage());
+        
+    }
    }
     
    public List<Reto> getTodosRetos(){
@@ -84,10 +89,8 @@ public class SwingClientController {
    public List<Sesion> getTodasSesiones(String token){
 	   return serviceProxy.getTodasSesiones(token);
    }
-   public List<Sesion> getSesionesXReto(String NombreReto){
-	   //hacer el metodo en el serviceProxy
-	   List<Sesion> prueba = new ArrayList<Sesion>();
-	   return prueba;
+   public List<Sesion> getSesionesXReto(long idReto){
+	   return serviceProxy.getSesionesPorReto(idReto);
    }
    public Sesion getDetalleDeSesion(Long IdSesion){
 	   return serviceProxy.getDetalleSesion(IdSesion);

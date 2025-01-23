@@ -15,7 +15,10 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
+
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import es.deusto.sd.auctions.client.data.Credendiales;
@@ -60,55 +63,7 @@ public class HttpServiceProxy implements IAuctionsServiceProxy {
         this.objectMapper = new ObjectMapper();
     }
     
-//    
-//	@Override
-//	public String login(Credendiales credenciales) {
-//		 try {
-//	            String credentialsJson = objectMapper.writeValueAsString(credenciales);
-//
-//	            HttpRequest request = HttpRequest.newBuilder()
-//	                .uri(URI.create(BASE_URL + "/autorizacion/login"))
-//	                .header("Content-Type", "application/json")
-//	                .POST(HttpRequest.BodyPublishers.ofString(credentialsJson))
-//	                .build();
-//
-//	            HttpResponse<String> response = httpCliente.send(request, HttpResponse.BodyHandlers.ofString());
-//
-//	            return switch (response.statusCode()) {
-//	                case 200 -> response.body(); // Successful login, returns token
-//	                case 401 -> throw new RuntimeException("No autorizado: credenciales inválidas");
-//	                default -> throw new RuntimeException("Error al hacer login con el status code: " + response.statusCode());
-//	            };
-//	        } catch (IOException | InterruptedException e) {
-//	            throw new RuntimeException("Error al iniciar sesión", e);
-//	        }
-//	    }
-//	
-	
-    //Cloude
-//	@Override
-//	public String login(Credendiales credenciales) {
-//	    try {
-//	        String credentialsJson = objectMapper.writeValueAsString(credenciales);
-//
-//	        HttpRequest request = HttpRequest.newBuilder()
-//	            .uri(URI.create(BASE_URL + "/autorizacion/login"))
-//	            .header("Content-Type", "application/json")
-//	            .POST(HttpRequest.BodyPublishers.ofString(credentialsJson))
-//	            .build();
-//
-//	        HttpResponse<String> response = httpCliente.send(request, HttpResponse.BodyHandlers.ofString());
-//
-//	        // Solo hay dos posibles respuestas según el controlador: 200 y 401
-//	        return switch (response.statusCode()) {
-//	            case 200 -> response.body(); // Token exitoso
-//	            case 401 -> throw new RuntimeException("Credenciales inválidas");
-//	            default -> throw new RuntimeException("Error inesperado en el servidor: " + response.statusCode());
-//	        };
-//	    } catch (IOException | InterruptedException e) {
-//	        throw new RuntimeException("Error de conexión al intentar iniciar sesión", e);
-//	    }
-//	}
+
 		
     @Override
     public String login(Credendiales credenciales) {
@@ -143,27 +98,7 @@ public class HttpServiceProxy implements IAuctionsServiceProxy {
         }
     }
 	
-//	@Override
-//	public void logout(String token) {
-//		
-//		try {
-//            HttpRequest request = HttpRequest.newBuilder()
-//                .uri(URI.create(BASE_URL + "/autorizacion/logout"))
-//                .header("Content-Type", "application/json")
-//                .POST(HttpRequest.BodyPublishers.ofString(token))
-//                .build();
-//
-//            HttpResponse<Void> response = httpCliente.send(request, HttpResponse.BodyHandlers.discarding());
-//
-//            switch (response.statusCode()) {
-//                case 204 -> {} 
-//                case 401 -> throw new RuntimeException("No autorizado: Token no valido, error al hacer logout");
-//                default -> throw new RuntimeException("Error al hacer logout con el status code: " + response.statusCode());
-//            }
-//        } catch (IOException | InterruptedException e) {
-//            throw new RuntimeException("Error en el logout", e);
-//        }
-//    }
+
 	@Override
 	public void logout(String token) {
 	    try {
@@ -185,38 +120,49 @@ public class HttpServiceProxy implements IAuctionsServiceProxy {
 	        throw new RuntimeException("Error de conexión al intentar cerrar sesión", e);
 	    }
 	}
+
+	
 	@Override
 	public List<Reto> getTodosRetos() {
 	    try {
-	        // El endpoint correcto es "/strava/retos" según el controlador, no "/auctions/retos"
 	        HttpRequest request = HttpRequest.newBuilder()
 	            .uri(URI.create(BASE_URL + "/strava/retos"))
 	            .header("Content-Type", "application/json")
 	            .GET()
 	            .build();
 
-	        System.out.println("Intentando obtener todos los retos...");
 	        HttpResponse<String> response = httpCliente.send(request, HttpResponse.BodyHandlers.ofString());
 	        
-	        System.out.println("Código de respuesta: " + response.statusCode());
-	        System.out.println("Cuerpo de respuesta: " + response.body());
+	        // Loggear el JSON recibido
+	        System.out.println("JSON recibido del servidor:");
+	        System.out.println(response.body());
 	        
-	        return switch (response.statusCode()) {
-	            case 200 -> {
-	                List<Reto> retos = objectMapper.readValue(response.body(), 
-	                    objectMapper.getTypeFactory().constructCollectionType(List.class, Reto.class));
-	                System.out.println("Se obtuvieron " + retos.size() + " retos exitosamente");
-	                yield retos;
+	        if (response.statusCode() == 200) {
+	            // Configurar ObjectMapper para ser más estricto con el mapeo
+	            objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+	            objectMapper.configure(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT, true);
+	            
+	            List<Reto> retos = objectMapper.readValue(
+	                response.body(),
+	                objectMapper.getTypeFactory().constructCollectionType(List.class, Reto.class)
+	            );
+	            
+	            // Verificar cada reto
+	            for (Reto reto : retos) {
+	                System.out.println("Reto mapeado: " + reto);
+	                if (reto.id() == null) {
+	                    System.out.println("Advertencia: Reto con ID null encontrado: " + reto.nombre());
+	                }
 	            }
-	            case 500 -> throw new RuntimeException("Error interno del servidor al buscar retos");
-	            default -> throw new RuntimeException("No se pudieron recuperar retos. Código: " + response.statusCode());
-	        };
+	            
+	            return retos;
+	        } else {
+	            throw new RuntimeException("Error al obtener retos: " + response.statusCode());
+	        }
 	    } catch (IOException | InterruptedException e) {
-	        System.err.println("Error al obtener los retos: " + e.getMessage());
-	        throw new RuntimeException("Error al obtener los retos", e);
+	        throw new RuntimeException("Error en la comunicación", e);
 	    }
 	}
-
 	@Override
 	public Reto getDetallesDeReto(Long IdReto) {
 		try {
@@ -276,9 +222,11 @@ public class HttpServiceProxy implements IAuctionsServiceProxy {
 	            .header("Content-Type", "application/json")
 	            .GET()
 	            .build();
+	        
+
 
 	        HttpResponse<String> response = httpCliente.send(request, HttpResponse.BodyHandlers.ofString());
-	        
+	        System.out.println("Respuesta del servidor: " + response.body());
 	        System.out.println("Código de respuesta: " + response.statusCode());
 	        System.out.println("Cuerpo de respuesta: " + response.body());
 	        
@@ -300,46 +248,13 @@ public class HttpServiceProxy implements IAuctionsServiceProxy {
 	    }
 	}
 	
-//	@Override
-//	public List<Sesion> getTodasSesiones() {
-//	    try {
-//	        System.out.println("Intentando obtener todas las sesiones del usuario...");
-//	        
-//	        HttpRequest request = HttpRequest.newBuilder()
-//	            .uri(URI.create(BASE_URL + "/strava/sesion/usuario?token=" + URLEncoder.encode(token, StandardCharsets.UTF_8)))
-//	            .header("Content-Type", "application/json")
-//	            .GET()
-//	            .build();
-//
-//	        HttpResponse<String> response = httpCliente.send(request, HttpResponse.BodyHandlers.ofString());
-//	        
-//	        System.out.println("Código de respuesta: " + response.statusCode());
-//	        System.out.println("Cuerpo de respuesta: " + response.body());
-//	        
-//	        return switch (response.statusCode()) {
-//	            case 200 -> {
-//	                List<Sesion> sesiones = objectMapper.readValue(response.body(), 
-//	                    objectMapper.getTypeFactory().constructCollectionType(List.class, Sesion.class));
-//	                System.out.println("Se obtuvieron " + sesiones.size() + " sesiones exitosamente");
-//	                yield sesiones;
-//	            }
-//	            case 204 -> throw new RuntimeException("No se encontraron sesiones para este usuario");
-//	            case 401 -> throw new RuntimeException("Token no válido");
-//	            case 500 -> throw new RuntimeException("Error interno del servidor");
-//	            default -> throw new RuntimeException("Error inesperado al obtener las sesiones. Código: " + response.statusCode());
-//	        };
-//	    } catch (IOException | InterruptedException e) {
-//	        System.err.println("Error al obtener las sesiones: " + e.getMessage());
-//	        throw new RuntimeException("Error al obtener las sesiones del usuario", e);
-//	    }
-//	}
-//	
+
 
 	@Override
 	public Sesion getDetalleSesion(Long idSesion) {
 		try {
 			   HttpRequest request = HttpRequest.newBuilder()
-		                .uri(URI.create(BASE_URL + "/auctions/retos/" + idSesion))
+		                .uri(URI.create(BASE_URL + "/strava/sesion/" + idSesion))
 		                .header("Content-Type", "application/json")
 		                .GET()
 		                .build();
@@ -357,58 +272,54 @@ public class HttpServiceProxy implements IAuctionsServiceProxy {
 		        }
 			
 		}
-
+	
+	
 	@Override
-	public List<Sesion> getSesionesPorReto(String nombreReto) {
-		try {
-            // Encode the category name to handle spaces and special characters
-            String encodedCategoryName = URLEncoder.encode(nombreReto, StandardCharsets.UTF_8);
-        	
-            HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "/auctions/retos/" + encodedCategoryName))
-                .header("Content-Type", "application/json")
-                .GET()
-                .build();
+	public List<Sesion> getSesionesPorReto(Long retoId) {  // Cambiado a Long retoId en lugar de String nombreReto
+	    try {
+	        System.out.println("Iniciando búsqueda de sesiones para el reto ID: " + retoId);
+	        
+	        // Construir la URL directamente con el ID
+	        String url = BASE_URL + "/strava/retos/" + retoId + "/sesiones";
+	        System.out.println("Intentando conectar a: " + url);
+	        
+	        HttpRequest request = HttpRequest.newBuilder()
+	            .uri(URI.create(url))
+	            .header("Content-Type", "application/json")
+	            .GET()
+	            .build();
 
-            HttpResponse<String> response = httpCliente.send(request, HttpResponse.BodyHandlers.ofString());
+	        HttpResponse<String> response = httpCliente.send(request, HttpResponse.BodyHandlers.ofString());
+	        
+	        System.out.println("Código de respuesta: " + response.statusCode());
+	        System.out.println("Cuerpo de la respuesta: " + response.body());
 
-            return switch (response.statusCode()) {
-                case 200 -> objectMapper.readValue(response.body(), objectMapper.getTypeFactory().constructCollectionType(List.class, Reto.class));
-                case 204 -> throw new RuntimeException("Not Content: Este reto no tiene sesiones");
-                case 404 -> throw new RuntimeException("Not Found: Reto no encontrado");
-                case 500 -> throw new RuntimeException("Error interno del servidor al buscar retos");
-                default -> throw new RuntimeException("No se pudieron recuperar retos con código de estado: " + response.statusCode());
-            };
-        } catch (IOException | InterruptedException e) {
-            throw new RuntimeException("Error al obtener los detalles del reto", e);
-        }
+	        return switch (response.statusCode()) {
+	            case 200 -> {
+	                List<Sesion> sesiones = objectMapper.readValue(
+	                    response.body(), 
+	                    objectMapper.getTypeFactory().constructCollectionType(List.class, Sesion.class)
+	                );
+	                System.out.println("Sesiones encontradas: " + sesiones.size());
+	                yield sesiones;
+	            }
+	            case 404 -> {
+	                System.out.println("Reto no encontrado en el servidor");
+	                throw new RuntimeException("Not Found: Reto no encontrado");
+	            }
+	            case 500 -> throw new RuntimeException("Error interno del servidor al buscar sesiones");
+	            default -> throw new RuntimeException("No se pudieron recuperar las sesiones. Código: " + response.statusCode());
+	        };
+	    } catch (IOException | InterruptedException e) {
+	        System.err.println("Error en la comunicación: " + e.getMessage());
+	        throw new RuntimeException("Error al obtener las sesiones del reto", e);
+	    }
 	}
+	
 
 	
-//	@Override
-//	public List<Reto> getMisRetos(String token) {
-//	    try {
-//	        HttpRequest request = HttpRequest.newBuilder()
-//	            .uri(URI.create(BASE_URL + "/strava/retos/retosAceptados?Token=" + URLEncoder.encode(token, StandardCharsets.UTF_8)))
-//	            .header("Content-Type", "application/json")
-//	            .header("Authorization", "Bearer " + token)  // Envía el token en el header
-//	            .GET()
-//	            .build();
-//
-//	        HttpResponse<String> response = httpCliente.send(request, HttpResponse.BodyHandlers.ofString());
-//	        
-//	        return switch (response.statusCode()) {
-//	            case 200 -> objectMapper.readValue(response.body(), 
-//	                objectMapper.getTypeFactory().constructCollectionType(List.class, Reto.class));
-//	            case 401 -> throw new RuntimeException("Token no válido o expirado");
-//	            case 404 -> throw new RuntimeException("No se encontraron retos para este usuario");
-//	            default -> throw new RuntimeException("Error al obtener los retos: " + response.statusCode());
-//	        };
-//	    } catch (IOException | InterruptedException e) {
-//	        throw new RuntimeException("Error al obtener los retos del usuario", e);
-//	    }
-//	}
-//	
+	
+	
 	@Override
 	public List<Reto> getMisRetos(String token) {
 	    try {
@@ -436,10 +347,9 @@ public class HttpServiceProxy implements IAuctionsServiceProxy {
 	                System.out.println("Se analizaron con éxito " + retos.size() + " retos");
 	                yield retos;
 	            }
-	            case 204 -> throw new RuntimeException("No hay retos aceptados para este usuario");
+	            case 204 -> new ArrayList<>();  // Retornar lista vacía en lugar de lanzar excepción
 	            case 401 -> throw new RuntimeException("Token no válido");
-	            default -> throw new RuntimeException("Error inesperado al obtener los retos. Código: " + response.statusCode() + 
-	                ", Respuesta: " + response.body());
+	            default -> throw new RuntimeException("Error inesperado al obtener los retos. Código: " + response.statusCode());
 	        };
 	    } catch (IOException e) {
 	        System.err.println("Error de IO: " + e.getMessage());
@@ -451,6 +361,19 @@ public class HttpServiceProxy implements IAuctionsServiceProxy {
 	        throw new RuntimeException("La operación fue interrumpida");
 	    }
 	}
+
+
+
+	@Override
+	public void guardarSesion(Long retoId, Sesion sesion, String token) {
+		// TODO Auto-generated method stub
+		
+	}
+
 	
+	
+	
+	
+
 	
 }

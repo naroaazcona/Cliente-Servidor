@@ -7,6 +7,7 @@ package es.deusto.sd.auctions.client.web;
 
 import java.util.List;
 
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -17,6 +18,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import com.fasterxml.jackson.annotation.JsonCreator.Mode;
+
 import es.deusto.sd.auctions.client.data.Credendiales;
 import es.deusto.sd.auctions.client.data.Reto;
 import es.deusto.sd.auctions.client.data.Sesion;
@@ -24,172 +27,174 @@ import es.deusto.sd.auctions.client.proxies.IAuctionsServiceProxy;
 import jakarta.servlet.http.HttpServletRequest;
 
 
-/**
- * WebClientController class serves as the primary controller for the web client
- * application built with Spring Boot. It orchestrates the interactions between
- * the web application and the AuctionsService through the
- * RestTemplateServiceProxy, managing HTTP requests and responses while serving
- * Thymeleaf templates.
- * 
- * The use of the `@Controller` annotation in the WebClientController class
- * signifies that this class serves as a front controller in the Spring MVC
- * architecture. This annotation allows Spring to recognize and manage the class
- * as a web component, enabling it to handle HTTP requests and produce responses
- * based on user interactions.
- * 
- * Spring Boot's `@Controller` facilitates the use of model attributes through
- * the `Model` interface. The `model.addAttribute()` method is used to add
- * attributes to the model, making them accessible in the Thymeleaf templates.
- * This method takes a key-value pair, where the key is the name of the
- * attribute that can be referenced in the template, and the value is the actual
- * data to be passed. For instance, when `model.addAttribute("currentUrl",
- * currentUrl)` is called, the current URL is stored in the model with the key
- * "currentUrl", allowing it to be easily accessed in the corresponding
- * Thymeleaf view. This mechanism enables the dynamic rendering of content based
- * on the application state, ensuring that user interfaces are responsive and
- * adaptable to user interactions.
- * 
- * The methods of the controller return a `String`, which represents the name of
- * the Thymeleaf template to be rendered. This design pattern allows the
- * controller to define the appropriate view for each action. For instance, when
- * the `home` method is called, it returns the string "index", which tells
- * Spring to render the `index.html` Thymeleaf template. The mapping methods not
- * only process data but also dictate the presentation layer, facilitating a
- * clear separation between business logic and user interface concerns.
- * 
- * This class uses two distinct mappings to handle the login process, allowing
- * for a clear separation of responsibilities and improving code organization.
- * 
- * The `@GetMapping("/login")` method is responsible for displaying the login
- * page. This method prepares and returns the view containing the login form,
- * ensuring that users can easily access the interface needed to enter their
- * credentials.
- * 
- * On the other hand, the `@PostMapping("/login")` method handles the submission
- * of the form, processing user input, validating credentials, and managing the
- * authentication logic. This separation allows each method to have a single
- * responsibility, making the code easier to understand and maintain.
- * 
- * (Description generated with ChatGPT 4o mini)
- */
+
 @Controller
 public class WebClientController {
-	
-	@Autowired
-	private IAuctionsServiceProxy auctionServiceProxy;
-	
-	private String token;
-	
-	@ModelAttribute
-	public void añadirAtributos(Model model, HttpServletRequest request) {
-		String currentUrl = ServletUriComponentsBuilder.fromRequestUri(request).toUriString();
-		model.addAttribute("currentUrl", currentUrl); 
-		model.addAttribute("token", token); 
-	}
-	@GetMapping("/")
-	
-	public String home(Model model) {
-		List<Reto> retos;
 
-		try {
-			retos = auctionServiceProxy.getTodosRetos();
-			model.addAttribute("reto", retos);
-		} catch (RuntimeException e) {
-			model.addAttribute("errorMessage", "Error al cargar Retos: " + e.getMessage());
-		}
+  @Autowired
+  private IAuctionsServiceProxy auctionServiceProxy;
+  private String token;
+  
+  @GetMapping("/")
+  public String mostrarHome() {
+      return "home";
+  }
+  @GetMapping("/login")
+  public String mostrarLogin() {
+      return "login";
+  }
 
-		return "index";
-	}
-	
-	@GetMapping("/login")
-	public String showLoginPage(@RequestParam(value = "redirectUrl", required = false) String redirectUrl,
-			Model model) {
-		// Add redirectUrl to the model if needed
-		model.addAttribute("redirectUrl", redirectUrl);
+ 
+  @PostMapping("/login")
+  public String procesarLogin(
+		      @RequestParam(value = "email") String email, 
+		      @RequestParam(value = "password") String password, 
+		      Model model
+		  )
+  {
+      try {
+          // Crear objeto de credenciales
+          Credendiales credenciales = new Credendiales(email, password);
+          
+          // Intentar hacer login a través del proxy
+          token = auctionServiceProxy.login(credenciales);
+          
+          // Si el login es exitoso, redirigir a la página de retos
+          return "redirect:/reto";
+      } catch (RuntimeException e) {
+          // Si hay un error (credenciales incorrectas, etc.)
+          model.addAttribute("errorMessage", "Credenciales incorrectas. Por favor, inténtelo de nuevo.");
+          return "login"; // Volver a la página de login con mensaje de error
+      }
+  }
+      
+  @GetMapping("/reto")
+  public String mostrarRetos(Model model) {
+      try {
+          System.out.println("Intentando obtener todos los retos");
+          
+          // Obtener TODOS los retos
+          List<Reto> retos = auctionServiceProxy.getTodosRetos();
+          
+          System.out.println("Número de retos obtenidos: " + (retos != null ? retos.size() : "0"));
+          
+          // Imprimir detalles de cada reto
+          if (retos != null) {
+              for (Reto reto : retos) {
+                  System.out.println("Reto: " + reto.nombre()+ ", Deporte: " + reto.deporte());
+              }
+          }
+          
+          // Añadir los retos al modelo
+          model.addAttribute("retos", retos);
+          
+          // Renderizar la vista de retos
+          return "reto";
+      } catch (Exception e) {
+          // Manejar cualquier error 
+          System.err.println("Error al obtener retos: " + e.getMessage());
+          e.printStackTrace();
+          
+          model.addAttribute("errorMessage", "No se pudieron cargar los retos: " + e.getMessage());
+          return "reto";
+      }
+  }
+  
+  @GetMapping("/reto/{id}/detalles")
+  public String mostrarDetallesReto(@PathVariable("id") Long IdReto, Model model) {
+	  try {
+		  System.out.println("Entra aqui"+ IdReto);
 
-		return "login"; // Return your login template
-	}
-	
-	@PostMapping("/login")
-	public String performLogin(@RequestParam("email") String email, @RequestParam("password") String password,
-			@RequestParam(value = "redirectUrl", required = false) String redirectUrl, Model model) {
-		Credendiales credenciales = new Credendiales(email, password);
+	        Reto reto = auctionServiceProxy.getDetallesDeReto(IdReto);
+			  System.out.println("Entra aqui"  );
+	        model.addAttribute("reto", reto);
+			  System.out.println("Entra aqui2");
+	        return "detalleReto";
+	    } catch (RuntimeException e) {
+	        model.addAttribute("errorMessage", "No se pudo encontrar el reto con ID: " + IdReto);
+	        return "reto";
+	    }
+  }
+  
+  @GetMapping("/reto/{retoId}/sesiones")
+  public String sesionesReto(@PathVariable("retoId") Long id, Model model) {
+      try {
+    	  System.out.println("id" + id);
+          // Obtener las sesiones del reto específico
+          List<Sesion> sesiones = auctionServiceProxy.getSesionesPorReto(id);
+          System.out.println("Sesiones" + sesiones);
+          // Obtener los detalles del reto para contexto adicional
+          Reto reto = auctionServiceProxy.getDetallesDeReto(id);
+          
+          // Agregar las sesiones y los detalles del reto al modelo
+          model.addAttribute("sesiones", sesiones);
+          model.addAttribute("reto", reto);
+          
+          // Devolver la vista de sesiones
+          return "sesiones"; // Asegúrate de tener un template llamado sesiones.html
+      } catch (RuntimeException e) {
+          // Manejo de errores
+          model.addAttribute("errorMessage", "No se pudieron cargar las sesiones del reto: " + e.getMessage());
+          return "reto"; // Redirigir a la página de retos en caso de error
+      }
+  
+  }
+  
+  @PostMapping("/reto/{retoId}/sesiones")
+  public String guardarSesion(@PathVariable("retoId") Long retoId, 
+                             @ModelAttribute Sesion sesion, 
+                             Model model) {
+      try {
+          System.out.println("Guardando nueva sesión para reto: " + retoId);
+          System.out.println("Datos de la sesión: " + sesion);
+          
+          // Convertir las horas de String a Long (milliseconds desde epoch)
+          if (sesion.horaInicio() != null) {
+              String[] horaInicioParts = sesion.horaInicio().toString().split(":");
+              long horaInicioMs = (Long.parseLong(horaInicioParts[0]) * 3600000) + 
+                                 (Long.parseLong(horaInicioParts[1]) * 60000);
+              sesion = new Sesion(
+                  sesion.id(),
+                  sesion.titulo(),
+                  sesion.deporte(),
+                  sesion.distancia(),
+                  horaInicioMs,
+                  sesion.horaFin(),
+                  sesion.duracion()
+              );
+          }
+          
+          if (sesion.horaFin() != null) {
+              String[] horaFinParts = sesion.horaFin().toString().split(":");
+              long horaFinMs = (Long.parseLong(horaFinParts[0]) * 3600000) + 
+                              (Long.parseLong(horaFinParts[1]) * 60000);
+              sesion = new Sesion(
+                  sesion.id(),
+                  sesion.titulo(),
+                  sesion.deporte(),
+                  sesion.distancia(),
+                  sesion.horaInicio(),
+                  horaFinMs,
+                  sesion.duracion()
+              );
+          }
 
-		try {
-			token = auctionServiceProxy.login(credenciales);
+          // Guardar la sesión usando el proxy
+          auctionServiceProxy.guardarSesion(retoId, sesion, token);
+          
+          // Redirigir a la vista de sesiones del reto
+          return "redirect:/reto/" + retoId + "/sesiones";
+          
+      } catch (Exception e) {
+          System.err.println("Error al guardar la sesión: " + e.getMessage());
+          e.printStackTrace();
+          
+          // En caso de error, volver a la página de sesiones con mensaje de error
+          model.addAttribute("errorMessage", "Error al guardar la sesión: " + e.getMessage());
+          return sesionesReto(retoId, model);
+      }
+  }
+  
+  
 
-			// Redirect to the original page or root if redirectUrl is null
-			return "redirect:" + (redirectUrl != null && !redirectUrl.isEmpty() ? redirectUrl : "/");
-		} catch (RuntimeException e) {
-			model.addAttribute("errorMessage", "Error al hacer Login: " + e.getMessage());
-			return "login"; // Return to login page with error message
-		}
-	}
-	
-	@GetMapping("/logout")
-	public String performLogout(@RequestParam(value = "redirectUrl", defaultValue = "/") String redirectUrl,
-			Model model) {
-		try {
-			auctionServiceProxy.logout(token);
-			token = null; // Clear the token after logout
-			model.addAttribute("successMessage", "Logout correcto.");
-		} catch (RuntimeException e) {
-			model.addAttribute("errorMessage", "Error de logout: " + e.getMessage());
-		}
-
-		// Redirect to the specified URL after logout
-		return "redirect:" + redirectUrl;
-	}
-	
-	@GetMapping("/Reto/{name}")
-	public String getRetosDeporte(@PathVariable("nombreDeporte") String nombreDeporte, Model model) {
-		List<Reto> retos;
-		
-		try {
-			retos = auctionServiceProxy.getRetosXDeporte(nombreDeporte);
-			model.addAttribute("Retos", retos);
-			model.addAttribute("Deporte", nombreDeporte);
-		} catch (RuntimeException e) {
-			model.addAttribute("errorMessage", "Error al cargar los Retos por cada Deporte: " + e.getMessage());
-			model.addAttribute("Reto", null);
-			model.addAttribute("Deporte", nombreDeporte);
-			
-		}
-		
-		return "Retos";
-	}
-	
-	@GetMapping("/Reto/{id}")
-	public String getRetoDetails(@PathVariable("id") Long id, Model model) {
-		Reto reto;
-
-		try {
-			reto = auctionServiceProxy.getDetallesDeReto(id);
-			model.addAttribute("Reto", reto);
-		} catch (RuntimeException e) {
-			model.addAttribute("errorMessage", "Error al cargar los detalles del Reto: " + e.getMessage());
-			model.addAttribute("Reto", null);
-		}
-
-		return "Reto";
-	}
-
-	@GetMapping("/Reto/{naombreReto}/sesiones")
-	public String getSesionesReto(@PathVariable("nombreReto") String nombreReto, Model model) {
-		List<Sesion> sesiones;
-		
-		try {
-			sesiones = auctionServiceProxy.getSesionesPorReto(nombreReto);
-			model.addAttribute("Sesiones", sesiones);
-			model.addAttribute("Reto", nombreReto);
-		} catch (RuntimeException e) {
-			model.addAttribute("errorMessage", "Error al cargar las Sesiones por cada Reto: " + e.getMessage());
-			model.addAttribute("Sesion", null);
-			model.addAttribute("Reto", nombreReto);
-			
-		}
-		
-		return "Retos";
-	}
-	
 }

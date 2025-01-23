@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Sesiones del Reto - Vuelta a Bizkaia</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .card {
+            border: none;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.08);
+            margin-bottom: 1rem;
+        }
+        .card-header {
+            background-color: #007bff;
+            color: white;
+            font-weight: bold;
+        }
+        .session-card {
+            transition: transform 0.2s;
+        }
+        .session-card:hover {
+            transform: translateY(-3px);
+        }
+        .stats-icon {
+            width: 24px;
+            text-align: center;
+            margin-right: 8px;
+        }
+        .modal-header {
+            background-color: #007bff;
+            color: white;
+        }
+        .modal-header .btn-close {
+            color: white;
+            filter: brightness(0) invert(1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container my-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h1 class="mb-0">Sesiones del Reto: <span th:text="${reto.nombre}">Nombre del Reto</span></h1>
+                    </div>
+                    <div class="card-body">
+                        <!-- Lista de sesiones -->
+                        <div class="row" th:if="${!sesiones.empty}">
+                            <div class="col-12 mb-4" th:each="sesion : ${sesiones}">
+                                <div class="card session-card">
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <h4 class="card-title" th:text="${sesion.titulo}">Título de la Sesión</h4>
+                                                <p class="text-muted">
+                                                    <i class="fas fa-running stats-icon"></i>
+                                                    <span th:text="${sesion.deporte}">Deporte</span>
+                                                </p>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="d-flex flex-column">
+                                                    <p class="mb-2">
+                                                        <i class="fas fa-route stats-icon"></i>
+                                                        <strong>Distancia:</strong>
+                                                        <span th:text="${sesion.distancia + ' km'}">Distancia</span>
+                                                    </p>
+                                                    <p class="mb-2">
+                                                        <i class="fas fa-clock stats-icon"></i>
+                                                        <strong>Duración:</strong>
+                                                        <span th:text="${sesion.duracion + ' horas'}">Duración</span>
+                                                    </p>
+                                                    <p class="mb-2">
+                                                        <i class="fas fa-hourglass-start stats-icon"></i>
+                                                        <strong>Hora Inicio:</strong>
+                                                        <span th:text="${sesion.horaInicio != null ? #temporals.format(java.time.Instant.ofEpochMilli(sesion.horaInicio), 'HH:mm') : 'No disponible'}">Hora Inicio</span>
+                                                    </p>
+                                                    <p class="mb-0">
+                                                        <i class="fas fa-hourglass-end stats-icon"></i>
+                                                        <strong>Hora Fin:</strong>
+                                                        <span th:text="${sesion.horaFin != null ? #temporals.format(java.time.Instant.ofEpochMilli(sesion.horaFin), 'HH:mm') : 'No disponible'}">Hora Fin</span>
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Mensaje cuando no hay sesiones -->
+                        <div class="text-center" th:if="${sesiones.empty}">
+                            <p class="lead">No hay sesiones registradas para este reto.</p>
+                        </div>
+
+                        <!-- Botones de acción -->
+                        <div class="text-center mt-4">
+                            <button type="button" class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#addSessionModal">
+                                <i class="fas fa-plus me-2"></i>Añadir Sesión
+                            </button>
+                            <a th:href="@{/reto/{id}/detalles(id=${reto.id})}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Volver al Reto
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para añadir sesión -->
+    <div class="modal fade" id="addSessionModal" tabindex="-1" aria-labelledby="addSessionModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addSessionModalLabel">Añadir Nueva Sesión</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form th:action="@{/reto/{id}/sesiones(id=${reto.id})}" method="POST">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="titulo" class="form-label">Título</label>
+                            <input type="text" class="form-control" id="titulo" name="titulo" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="deporte" class="form-label">Deporte</label>
+                            <select class="form-select" id="deporte" name="deporte" required>
+                                <option value="">Selecciona un deporte</option>
+                                <option value="running">Running</option>
+                                <option value="cycling">Cycling</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="distancia" class="form-label">Distancia (km)</label>
+                            <input type="number" step="0.1" min="0" class="form-control" id="distancia" name="distancia" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="horaInicio" class="form-label">Hora de Inicio</label>
+                            <input type="time" class="form-control" id="horaInicio" name="horaInicio">
+                        </div>
+                        <div class="mb-3">
+                            <label for="horaFin" class="form-label">Hora de Fin</label>
+                            <input type="time" class="form-control" id="horaFin" name="horaFin">
+                        </div>
+                        <div class="mb-3">
+                            <label for="duracion" class="form-label">Duración (horas)</label>
+                            <input type="number" step="0.1" min="0" class="form-control" id="duracion" name="duracion" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar Sesión</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+      </div>
+	  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+	  <footer style="background-color: #f8f9fa; padding: 15px; text-align: center; border-top: 1px solid #ddd;">
+	  	    <p style="margin: 0; font-size: 14px; color: #333;">
+	  	        <i class="fas fa-graduation-cap" style="color: #007bff;"></i> 
+	  	        Created for <strong>Software Design</strong> subject. <strong>University of Deusto </strong>(2024).
+	  	    </p>
+	  	</footer>
+	</body>
+</html>
